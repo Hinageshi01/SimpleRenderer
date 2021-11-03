@@ -184,11 +184,86 @@ void RasterizeTriangle(Eigen::Vector4f* v, Eigen::Vector3f* n, float* z_bufer) {
     }
 }
 
+inline Eigen::Matrix4f GetModelMatrix(float angle) {
+    Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
+
+    Eigen::Matrix4f rotation;
+    angle = angle * MY_PI / 180.0f;
+    rotation << cos(angle), 0, sin(angle), 0,
+        0, 1, 0, 0,
+        -sin(angle), 0, cos(angle), 0,
+        0, 0, 0, 1;
+    //Eigen::Matrix4f scale;
+    //scale << 1, 0, 0, 0,
+    //    0, 1, 0, 0,
+    //    0, 0, 1, 0,
+    //    0, 0, 0, 1 / 2.5;
+    //Eigen::Matrix4f translate;
+    //translate << 1, 0, 0, 0,
+    //    0, 1, 0, 0,
+    //    0, 0, 1, 0,
+    //    0, 0, 0, 1;
+
+    model = rotation * model;
+    return model;
+}
+
+inline Eigen::Matrix4f GetViewMatrix(Eigen::Vector3f eyePos) {
+    Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
+
+    Eigen::Matrix4f translate;
+    translate << 1, 0, 0, -eyePos[0],
+        0, 1, 0, -eyePos[1],
+        0, 0, 1, -eyePos[2],
+        0, 0, 0, 1;
+
+    view = translate * view;
+    return view;
+}
+
+inline Eigen::Matrix4f GetProjectionMatrix(float fov, float aspect, float zNear, float zFar) {
+    Eigen::Matrix4f projection = Eigen::Matrix4f::Identity();
+
+    Eigen::Matrix4f Mpo;
+    Mpo << zNear, 0, 0, 0,
+        0, zNear, 0, 0,
+        0, 0, zNear + zFar, -zNear * zFar,
+        0, 0, 1, 0;
+
+    fov = fov * MY_PI / 180.0f;
+    float t = -1 * tan(fov / 2) * abs(zNear);
+    float b = -t;
+    float r = aspect * t;
+    float l = -r;
+    float n = zNear;
+    float f = zFar;
+
+    Eigen::Matrix4f Mo;
+    Mo << 2 / (r - l), 0, 0, (r + l) / -2,
+        0, 2 / (t - b), 0, (t + b) / -2,
+        0, 0, 2 / (n - f), (n + f) / -2,
+        0, 0, 0, 1;
+
+    projection = Mo * Mpo * projection;
+    return projection;
+}
+
+inline Eigen::Matrix4f GetViewportMatrix() {
+    Eigen::Matrix4f viewport = Eigen::Matrix4f::Identity();
+
+    Eigen::Matrix4f translate;
+    translate << WIDTH / 2.f, 0, 0, WIDTH / 2.f,
+        0, HEIGHT / 2.f, 0, HEIGHT / 2.f,
+        0, 0, 1, 0,
+        0, 0, 1, 0;
+}
+
 inline Eigen::Vector4f world2screen(Eigen::Vector3f v) {
     return Eigen::Vector4f(int((v[0] + 1.) * WIDTH / 2. + 0.5), HEIGHT - int((v[1] + 1.) * HEIGHT / 2. + 0.5), v[2], 1.f);
 }
 
 int main() {
+
     model = new Model("obj/african_head/african_head.obj");
     //model = new Model("obj/boggie/body.obj");
     //model = new Model("obj/diablo3_pose/diablo3_pose.obj");
