@@ -1,7 +1,6 @@
-#ifndef __IMAGE_H__
-#define __IMAGE_H__
+#pragma once
 
-#include <fstream>
+#include "global.h"
 
 #pragma pack(push,1)
 struct TGA_Header
@@ -97,5 +96,3 @@ public:
     unsigned char* buffer();
     void clear();
 };
-
-#endif //__IMAGE_H__

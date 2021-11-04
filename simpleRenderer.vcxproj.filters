@@ -24,12 +24,27 @@
     <ClCompile Include="tgaimage.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="rasterizer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="vertexShader.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="model.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="tgaimage.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="rasterizer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="vertexShader.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="global.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

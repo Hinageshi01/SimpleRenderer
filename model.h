@@ -1,9 +1,7 @@
-#ifndef __MODEL_H__
-#define __MODEL_H__
-#include <vector>
-#include <string>
+#pragma once
+
+#include "global.h"
 #include "tgaimage.h"
-#include <eigen3/Eigen/Eigen>
 
 class Model
 {
@@ -30,4 +28,3 @@ public:
     float specular(Eigen::Vector2f uv);
     std::vector<int> face(int idx);
 };
-#endif //__MODEL_H__
