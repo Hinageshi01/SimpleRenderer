@@ -1,5 +1,4 @@
-﻿#include "global.h"
-#include "model.h"
+﻿#include "model.h"
 #include "rasterizer.h"
 #include "vertexShader.h"
 
@@ -14,23 +13,23 @@ int main() {
     //model = new Model("obj/diablo3_pose/diablo3_pose.obj");
 
     // 准备顶点着色器。
-    // TODO：这个晚点要写到主循环里面
-    float angle = 20.f;
+    // TODO：物体会旋转，相机会移动，这个晚点要写到主循环里面
+    float angleY = 20.f;
     float scale = 3.5f;
     Eigen::Vector3f move = {0,0.1f,0};
     Eigen::Vector3f eyePos = {0,0,10};
     Frustum fru = {45.f, 1.f, 0.1f, 50.f};
-    VertexShader vs(angle, scale, move, eyePos, fru);
+    VertexShader vs(angleY, scale, move, eyePos, fru);
 
     // 准备光栅化器。
-    initgraph(WIDTH, HEIGHT);
-    Rasterizer r;
     Light light = {{1,1,1}, {1,2,3}, {150,200,250}};
-    r.SetLight(light);
-
+    Rasterizer r(light);
+    
     // 准备深度缓冲。
     float* z_buffer = new float[WIDTH * HEIGHT];
     memset(z_buffer, std::numeric_limits<float>::max(), WIDTH * HEIGHT * sizeof(float));
+
+    initgraph(WIDTH, HEIGHT);
 
     float startTime = omp_get_wtime();
 #pragma omp parallel for
@@ -38,7 +37,7 @@ int main() {
         // 这个循环里遍历所有三角面。
         std::vector<int> face = model->face(i);
 
-        // TODO: 晚点把顶点数据封装成一个类
+        // TODO: 把顶点数据封装成一个类
         Eigen::Vector4f vertex[3];
         Eigen::Vector4f normal[3];
 
@@ -68,6 +67,7 @@ int main() {
     return 0;
 }
 
+// 调试起来别扭，最后再考虑把管线放入主循环
 //int main() {
 //    ExMessage m;
 //

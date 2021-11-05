@@ -3,13 +3,7 @@
 #undef max
 #undef min
 
-Rasterizer::Rasterizer() {
-
-}
-
-void Rasterizer::SetLight(const Light& l) {
-    light = l;
-}
+Rasterizer::Rasterizer(const Light& l) :light(l) {}
 
 void Rasterizer::BHLine(const Eigen::Vector4f& point0, const Eigen::Vector4f& point1, COLORREF color) {
     Eigen::Vector4f p0 = point0;
@@ -60,7 +54,7 @@ inline Eigen::Vector4f Rasterizer::Interpolate(const float& a, const float& b, c
     return a * v1 + b * v2 + c * v3;
 }
 
-inline bool Rasterizer::InsideTriangle(const Eigen::Vector4f* v, const Eigen::Vector3f p) {
+inline bool Rasterizer::InsideTriangle(const Eigen::Vector4f* v, const Eigen::Vector3f& p) {
     //TODO：优化一下矩阵运算
     Eigen::Vector3f a(v[0][0], v[0][1], 0);
     Eigen::Vector3f b(v[1][0], v[1][1], 0);
