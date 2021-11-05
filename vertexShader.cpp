@@ -1,7 +1,7 @@
 #include "vertexShader.h"
 
 VertexShader::VertexShader(const float& a, const float& s, const Eigen::Vector3f& m, const Eigen::Vector3f& e, const Frustum& f) :
-    angleY(a), scale(s), move(m), eyePos(e), fru(f)
+    angleY(a), scale(s), move(m), fru(f)
 {
     near = fru.zNear;
     far = fru.zFar;
@@ -11,6 +11,11 @@ VertexShader::VertexShader(const float& a, const float& s, const Eigen::Vector3f
     float b = -t;
     float r = fru.aspect * t;
     float l = -r;
+
+    view << 1, 0, 0, -e[0],
+        0, 1, 0, -e[1],
+        0, 0, 1, -e[2],
+        0, 0, 0, 1;
 
     Eigen::Matrix4f Mpo;
     Mpo << fru.zNear, 0, 0, 0,
@@ -22,13 +27,12 @@ VertexShader::VertexShader(const float& a, const float& s, const Eigen::Vector3f
         0, 2 / (t - b), 0, (t + b) / -2,
         0, 0, 2 / (near - far), (near + far) / -2,
         0, 0, 0, 1;
-
     projection = Mo * Mpo;
 }
 
-void VertexShader::Update(const float& a, const Eigen::Vector3f& m) {
+void VertexShader::Update(const float& a, const float& s) {
     angleY = a;
-    move = m;
+    scale = s;
 }
 
 inline Eigen::Matrix4f VertexShader::GetModelMatrix() {
@@ -54,43 +58,32 @@ inline Eigen::Matrix4f VertexShader::GetModelMatrix() {
     return Mmove * Mscale * Mrotation;
 }
 
-inline Eigen::Matrix4f VertexShader::GetViewMatrix() {
-    Eigen::Matrix4f Mview = Eigen::Matrix4f::Identity();
-    Mview << 1, 0, 0, -eyePos[0],
-        0, 1, 0, -eyePos[1],
-        0, 0, 1, -eyePos[2],
-        0, 0, 0, 1;
-
-    return Mview;
-}
-
-void VertexShader::Transform(Eigen::Vector4f* vertex, Eigen::Vector4f* normal, Eigen::Vector3f* viewPos) {
+void VertexShader::Transform(Vertex* vertex) {
     Eigen::Matrix4f model = GetModelMatrix();
-    Eigen::Matrix4f view = GetViewMatrix();
 
     Eigen::Matrix4f modelView = view * model;
     Eigen::Matrix4f mvp = projection * modelView;
     Eigen::Matrix4f modelViewInvTran = modelView.inverse().transpose();
 
     for (int i = 0; i < 3; i++) {
-        viewPos[i] = (modelView * vertex[i]).head<3>();
+        vertex[i].viewPos = (modelView * vertex[i].pos).head<3>();
     }
 
     for (int i = 0; i < 3; i++) {
-        Eigen::Vector4f v = mvp * vertex[i];
+        Eigen::Vector4f v = mvp * vertex[i].pos;
 
         v[0] /= v[3];
         v[1] /= v[3];
         v[2] /= v[3];
         v[3] /= v[3];
 
-        const float f1 = (far - near) / 2.f;
-        const float f2 = (far + near) / 2.f;
+        float f1 = (far - near) / 2.f;
+        float f2 = (far + near) / 2.f;
         v[0] = float(0.5f * WIDTH * (v[0] + 1.f));
         v[1] = float(0.5f * HEIGHT * (v[1] + 1.f));
         v[2] = v[2] * f1 + f2;
-        vertex[i] = v;
+        vertex[i].pos = v;
 
-        normal[i] = modelViewInvTran * normal[i];
+        vertex[i].normal = modelViewInvTran * vertex[i].normal;
     }
 }

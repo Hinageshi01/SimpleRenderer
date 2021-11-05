@@ -1,5 +1,4 @@
-﻿#include "model.h"
-#include "rasterizer.h"
+﻿#include "rasterizer.h"
 #include "vertexShader.h"
 
 #undef max
@@ -37,32 +36,23 @@ int main() {
         // 这个循环里遍历所有三角面。
         std::vector<int> face = model->face(i);
 
-        // TODO: 把顶点数据封装成一个类
-        Eigen::Vector4f vertex[3];
-        Eigen::Vector4f normal[3];
-        Eigen::Vector2f uv[3];
-
-        Eigen::Vector3f viewPos[3];
-
         // 装配三角形。
+        Vertex vertex[3];
         for (int j = 0; j < 3; j++) {
-            Eigen::Vector3f tmpV = model->vert(face[j]);
-            vertex[j] = Eigen::Vector4f(tmpV[0], tmpV[1], tmpV[2], 1.f);
+            Eigen::Vector3f tmpP = model->vert(face[j]);
+            vertex[j].pos = Eigen::Vector4f(tmpP[0], tmpP[1], tmpP[2], 1.f);
 
             Eigen::Vector3f tmpN = model->normal(i, j);
-            normal[j] = Eigen::Vector4f(tmpN[0], tmpN[1], tmpN[2], 0.f);
+            vertex[j].normal = Eigen::Vector4f(tmpN[0], tmpN[1], tmpN[2], 0.f);
 
-            uv[j] = model->uv(i, j);
+            vertex[j].uv = model->uv(i, j);
         }
 
-        // 应用变换矩阵。
-        vs.Transform(vertex, normal, viewPos);
+        // Vertex Shader
+        vs.Transform(vertex);
 
-        //r.RasterizeTriangle_AABB(vertex, normal, z_buffer);
-        r.RasterizeTriangle_SL(model, viewPos, vertex, normal, uv, z_buffer);
-        //for (int j = 0; j < 3; j++) {
-        //    r.BHLine(vertex[j], vertex[(j + 1) % 3], WHITE);
-        //}
+        // 光栅化与 Fragment Shader
+        r.RasterizeTriangle_SL(vertex, model, z_buffer);
     }
     float endTime = omp_get_wtime();
     std::cout << "Rendered 1 frame with " << endTime - startTime << " s" << std::endl;

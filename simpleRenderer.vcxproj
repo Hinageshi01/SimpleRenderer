@@ -152,6 +152,7 @@
     <ClCompile Include="model.cpp" />
     <ClCompile Include="rasterizer.cpp" />
     <ClCompile Include="tgaimage.cpp" />
+    <ClCompile Include="vertex.cpp" />
     <ClCompile Include="vertexShader.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -159,6 +160,7 @@
     <ClInclude Include="model.h" />
     <ClInclude Include="rasterizer.h" />
     <ClInclude Include="tgaimage.h" />
+    <ClInclude Include="vertex.h" />
     <ClInclude Include="vertexShader.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

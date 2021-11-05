@@ -43,10 +43,10 @@ void Rasterizer::BHLine(const Eigen::Vector4f& point0, const Eigen::Vector4f& po
     }
 }
 
-inline Eigen::Vector3f Rasterizer::BarycentricCoor(const float& x, const float& y, const Eigen::Vector4f* v) {
-    float c1 = (x * (v[1][1] - v[2][1]) + (v[2][0] - v[1][0]) * y + v[1][0] * v[2][1] - v[2][0] * v[1][1]) / (v[0][0] * (v[1][1] - v[2][1]) + (v[2][0] - v[1][0]) * v[0][1] + v[1][0] * v[2][1] - v[2][0] * v[1][1]);
-    float c2 = (x * (v[2][1] - v[0][1]) + (v[0][0] - v[2][0]) * y + v[2][0] * v[0][1] - v[0][0] * v[2][1]) / (v[1][0] * (v[2][1] - v[0][1]) + (v[0][0] - v[2][0]) * v[1][1] + v[2][0] * v[0][1] - v[0][0] * v[2][1]);
-    float c3 = (x * (v[0][1] - v[1][1]) + (v[1][0] - v[0][0]) * y + v[0][0] * v[1][1] - v[1][0] * v[0][1]) / (v[2][0] * (v[0][1] - v[1][1]) + (v[1][0] - v[0][0]) * v[2][1] + v[0][0] * v[1][1] - v[1][0] * v[0][1]);
+inline Eigen::Vector3f Rasterizer::BarycentricCoor(const float& x, const float& y, const Vertex* v) {
+    float c1 = (x * (v[1].pos[1] - v[2].pos[1]) + (v[2].pos[0] - v[1].pos[0]) * y + v[1].pos[0] * v[2].pos[1] - v[2].pos[0] * v[1].pos[1]) / (v[0].pos[0] * (v[1].pos[1] - v[2].pos[1]) + (v[2].pos[0] - v[1].pos[0]) * v[0].pos[1] + v[1].pos[0] * v[2].pos[1] - v[2].pos[0] * v[1].pos[1]);
+    float c2 = (x * (v[2].pos[1] - v[0].pos[1]) + (v[0].pos[0] - v[2].pos[0]) * y + v[2].pos[0] * v[0].pos[1] - v[0].pos[0] * v[2].pos[1]) / (v[1].pos[0] * (v[2].pos[1] - v[0].pos[1]) + (v[0].pos[0] - v[2].pos[0]) * v[1].pos[1] + v[2].pos[0] * v[0].pos[1] - v[0].pos[0] * v[2].pos[1]);
+    float c3 = (x * (v[0].pos[1] - v[1].pos[1]) + (v[1].pos[0] - v[0].pos[0]) * y + v[0].pos[0] * v[1].pos[1] - v[1].pos[0] * v[0].pos[1]) / (v[2].pos[0] * (v[0].pos[1] - v[1].pos[1]) + (v[1].pos[0] - v[0].pos[0]) * v[2].pos[1] + v[0].pos[0] * v[1].pos[1] - v[1].pos[0] * v[0].pos[1]);
     return Eigen::Vector3f(c1, c2, c3);
 }
 
@@ -60,32 +60,94 @@ inline Eigen::Vector2f Rasterizer::Interpolate(const float& a, const float& b, c
     return a * v1 + b * v2 + c * v3;
 }
 
-inline bool Rasterizer::InsideTriangle(const Eigen::Vector4f* v, const Eigen::Vector3f& p) {
-    //TODO：优化一下矩阵运算
-    Eigen::Vector3f a(v[0][0], v[0][1], 0);
-    Eigen::Vector3f b(v[1][0], v[1][1], 0);
-    Eigen::Vector3f c(v[2][0], v[2][1], 0);
+//inline bool Rasterizer::InsideTriangle(const Eigen::Vector4f* v, const Eigen::Vector3f& p) {
+//    //TODO：优化一下矩阵运算
+//    Eigen::Vector3f a(v[0][0], v[0][1], 0);
+//    Eigen::Vector3f b(v[1][0], v[1][1], 0);
+//    Eigen::Vector3f c(v[2][0], v[2][1], 0);
+//
+//    Eigen::Vector3f ab = b - a;
+//    Eigen::Vector3f bc = c - b;
+//    Eigen::Vector3f ca = a - c;
+//
+//    Eigen::Vector3f ap = p - a;
+//    Eigen::Vector3f bp = p - b;
+//    Eigen::Vector3f cp = p - c;
+//
+//    Eigen::Vector3f crs1 = ab.cross(ap);
+//    Eigen::Vector3f crs2 = bc.cross(bp);
+//    Eigen::Vector3f crs3 = ca.cross(cp);
+//
+//    return ((crs1[2] >= 0 && crs2[2] >= 0 && crs3[2] >= 0) ||
+//            (crs1[2] <= 0 && crs2[2] <= 0 && crs3[2] <= 0));
+//}
+//
+//void Rasterizer::RasterizeTriangle_AABB(Eigen::Vector4f* v, Eigen::Vector4f* n, float* z_bufer) {
+//    Eigen::Vector3f a(v[0][0], v[0][1], 0.f);
+//    Eigen::Vector3f b(v[1][0], v[1][1], 0.f);
+//    Eigen::Vector3f c(v[2][0], v[2][1], 0.f);
+//
+//    Eigen::Vector3f ab = b - a;
+//    Eigen::Vector3f bc = c - b;
+//    Eigen::Vector3f faceNormal = ab.cross(bc);
+//    if (faceNormal[2] < 0) {
+//        //TODO：这里只关心z分量，优化一下矩阵运算
+//        // 当三角面背对视点时，不做光栅化。
+//        return;
+//    }
+//
+//    if ((v[0][1] == v[1][1] && v[0][1] == v[2][1]) || (v[0][0] == v[1][0] && v[0][0] == v[2][0])) {
+//        // 三角面完全侧对视点时，不做光栅化。
+//        return;
+//    }
+//
+//    int min_x = (int)std::floor(std::min(v[0][0], std::min(v[1][0], v[2][0])));
+//    int max_x = (int)std::ceil(std::max(v[0][0], std::max(v[1][0], v[2][0])));
+//    int min_y = (int)std::floor(std::min(v[0][1], std::min(v[1][1], v[2][1])));
+//    int max_y = (int)std::ceil(std::max(v[0][1], std::max(v[1][1], v[2][1])));
+//
+//    min_x = std::clamp(min_x, 0, WIDTH - 1);
+//    max_x = std::clamp(max_x, 0, WIDTH - 1);
+//    min_y = std::clamp(min_y, 0, HEIGHT - 1);
+//    max_y = std::clamp(max_y, 0, HEIGHT - 1);
+//
+//    for (int x = min_x; x <= max_x; x++) {
+//        for (int y = min_y; y <= max_y; y++) {
+//            if (InsideTriangle(v, Eigen::Vector3f(x, y, 0))) {
+//                int index = x + y * WIDTH;
+//
+//                Eigen::Vector3f tmpBC = BarycentricCoor(x + 0.5f, y + 0.5f, v);
+//                float a = tmpBC[0];
+//                float b = tmpBC[1];
+//                float c = tmpBC[2];
+//
+//                float a_div_w = a / (float)v[0][3];
+//                float b_div_w = b / (float)v[1][3];
+//                float c_div_w = c / (float)v[2][3];
+//                float z = 1.0f / (a_div_w + b_div_w + c_div_w);
+//                float zp = a_div_w * v[0][2] + b_div_w * v[1][2] + c_div_w * v[2][2];
+//                zp *= z;
+//
+//                if (zp <= z_bufer[index]) {
+//                    z_bufer[index] = zp;
+//
+//                    Eigen::Vector4f normal = Interpolate(a, b, c, n[0], n[1], n[2]);
+//                    float cosTerm = std::max(0.f, normal.head<3>().normalized().dot(light.direction.normalized()));
+//                    cosTerm += 0.1f;
+//                    cosTerm = std::clamp(cosTerm, 0.0f, 1.0f);
+//                    COLORREF color = RGB(cosTerm * light.intensity[0], cosTerm * light.intensity[1], cosTerm * light.intensity[2]);
+//
+//                    putpixel(x, y, color);
+//                }
+//            }
+//        }
+//    }
+//}
 
-    Eigen::Vector3f ab = b - a;
-    Eigen::Vector3f bc = c - b;
-    Eigen::Vector3f ca = a - c;
-
-    Eigen::Vector3f ap = p - a;
-    Eigen::Vector3f bp = p - b;
-    Eigen::Vector3f cp = p - c;
-
-    Eigen::Vector3f crs1 = ab.cross(ap);
-    Eigen::Vector3f crs2 = bc.cross(bp);
-    Eigen::Vector3f crs3 = ca.cross(cp);
-
-    return ((crs1[2] >= 0 && crs2[2] >= 0 && crs3[2] >= 0) ||
-            (crs1[2] <= 0 && crs2[2] <= 0 && crs3[2] <= 0));
-}
-
-void Rasterizer::RasterizeTriangle_AABB(Eigen::Vector4f* v, Eigen::Vector4f* n, float* z_bufer) {
-    Eigen::Vector3f a(v[0][0], v[0][1], 0.f);
-    Eigen::Vector3f b(v[1][0], v[1][1], 0.f);
-    Eigen::Vector3f c(v[2][0], v[2][1], 0.f);
+void Rasterizer::RasterizeTriangle_SL(Vertex* v,  Model* const model, float* z_bufer) {
+    Eigen::Vector3f a(v[0].pos[0], v[0].pos[1], 0.f);
+    Eigen::Vector3f b(v[1].pos[0], v[1].pos[1], 0.f);
+    Eigen::Vector3f c(v[2].pos[0], v[2].pos[1], 0.f);
 
     Eigen::Vector3f ab = b - a;
     Eigen::Vector3f bc = c - b;
@@ -96,113 +158,44 @@ void Rasterizer::RasterizeTriangle_AABB(Eigen::Vector4f* v, Eigen::Vector4f* n, 
         return;
     }
 
-    if ((v[0][1] == v[1][1] && v[0][1] == v[2][1]) || (v[0][0] == v[1][0] && v[0][0] == v[2][0])) {
-        // 三角面完全侧对视点时，不做光栅化。
-        return;
-    }
-
-    int min_x = (int)std::floor(std::min(v[0][0], std::min(v[1][0], v[2][0])));
-    int max_x = (int)std::ceil(std::max(v[0][0], std::max(v[1][0], v[2][0])));
-    int min_y = (int)std::floor(std::min(v[0][1], std::min(v[1][1], v[2][1])));
-    int max_y = (int)std::ceil(std::max(v[0][1], std::max(v[1][1], v[2][1])));
-
-    min_x = std::clamp(min_x, 0, WIDTH - 1);
-    max_x = std::clamp(max_x, 0, WIDTH - 1);
-    min_y = std::clamp(min_y, 0, HEIGHT - 1);
-    max_y = std::clamp(max_y, 0, HEIGHT - 1);
-
-    for (int x = min_x; x <= max_x; x++) {
-        for (int y = min_y; y <= max_y; y++) {
-            if (InsideTriangle(v, Eigen::Vector3f(x, y, 0))) {
-                int index = x + y * WIDTH;
-
-                Eigen::Vector3f tmpBC = BarycentricCoor(x + 0.5f, y + 0.5f, v);
-                float a = tmpBC[0];
-                float b = tmpBC[1];
-                float c = tmpBC[2];
-
-                float a_div_w = a / (float)v[0][3];
-                float b_div_w = b / (float)v[1][3];
-                float c_div_w = c / (float)v[2][3];
-                float z = 1.0f / (a_div_w + b_div_w + c_div_w);
-                float zp = a_div_w * v[0][2] + b_div_w * v[1][2] + c_div_w * v[2][2];
-                zp *= z;
-
-                if (zp <= z_bufer[index]) {
-                    z_bufer[index] = zp;
-
-                    Eigen::Vector4f normal = Interpolate(a, b, c, n[0], n[1], n[2]);
-                    float cosTerm = std::max(0.f, normal.head<3>().normalized().dot(light.direction.normalized()));
-                    cosTerm += 0.1f;
-                    cosTerm = std::clamp(cosTerm, 0.0f, 1.0f);
-                    COLORREF color = RGB(cosTerm * light.intensity[0], cosTerm * light.intensity[1], cosTerm * light.intensity[2]);
-
-                    putpixel(x, y, color);
-                }
-            }
-        }
-    }
-}
-
-void Rasterizer::RasterizeTriangle_SL(Model* model, Eigen::Vector3f* vp, Eigen::Vector4f* v, Eigen::Vector4f* n, Eigen::Vector2f* uv, float* z_bufer) {
-    Eigen::Vector3f a(v[0][0], v[0][1], 0.f);
-    Eigen::Vector3f b(v[1][0], v[1][1], 0.f);
-    Eigen::Vector3f c(v[2][0], v[2][1], 0.f);
-
-    Eigen::Vector3f ab = b - a;
-    Eigen::Vector3f bc = c - b;
-    Eigen::Vector3f faceNormal = ab.cross(bc);
-    if (faceNormal[2] < 0) {
-        //TODO：这里只关心z分量，优化一下矩阵运算
-        // 当三角面背对视点时，不做光栅化。
-        return;
-    }
-
-    if ((v[0][1] == v[1][1] && v[0][1] == v[2][1]) || (v[0][0] == v[1][0] && v[0][0] == v[2][0])) {
+    if ((v[0].pos[1] == v[1].pos[1] && v[0].pos[1] == v[2].pos[1]) || (v[0].pos[0] == v[1].pos[0] && v[0].pos[0] == v[2].pos[0])) {
         // 三角面完全侧对视点时，不做光栅化。
         return;
     }
 
     // 为三个点排序；v[0]，v[1]，v[2] 从下至上。
-    if (v[0][1] > v[1][1]) {
+    if (v[0].pos[1] > v[1].pos[1]) {
         std::swap(v[0], v[1]);
-        std::swap(n[0], n[1]);
-        std::swap(uv[0], uv[1]);
-        std::swap(vp[0], vp[1]);
     }
-    if (v[0][1] > v[2][1]) {
+    if (v[0].pos[1] > v[2].pos[1]) {
         std::swap(v[0], v[2]);
-        std::swap(n[0], n[2]);
-        std::swap(uv[0], uv[2]);
-        std::swap(vp[0], vp[2]);
+
     }
-    if (v[1][1] > v[2][1]) {
+    if (v[1].pos[1] > v[2].pos[1]) {
         std::swap(v[1], v[2]);
-        std::swap(n[1], n[2]);
-        std::swap(uv[1], uv[2]);
-        std::swap(vp[1], vp[2]);
+
     }
 
-    v[0][1] = std::floor(v[0][1]);
-    v[2][1] = std::ceil(v[2][1]);
+    v[0].pos[1] = std::floor(v[0].pos[1]);
+    v[2].pos[1] = std::ceil(v[2].pos[1]);
 
-    int totalHeight = v[2][1] - v[0][1] + 0.5f;
-    int firstHeight = v[1][1] - v[0][1] + 0.5f;
-    int secondHeight = v[2][1] - v[1][1] + 0.5f;
+    int totalHeight = v[2].pos[1] - v[0].pos[1] + 0.5f;
+    int firstHeight = v[1].pos[1] - v[0].pos[1] + 0.5f;
+    int secondHeight = v[2].pos[1] - v[1].pos[1] + 0.5f;
     for (int i = 1; i < totalHeight; i++) {
-        bool isSecond = (i > firstHeight) || (v[1][1] == v[0][1]);
+        bool isSecond = (i > firstHeight) || (v[1].pos[1] == v[0].pos[1]);
         int crtHeight = isSecond ? secondHeight : firstHeight;
         float alphaRate = i / (float)totalHeight;
         float betaRate = (i - (isSecond ? firstHeight : 0)) / (float)crtHeight;
 
-        int A_x = v[0][0] + (v[2][0] - v[0][0]) * alphaRate + 0.5f;
-        int B_x = isSecond ? v[1][0] + (v[2][0] - v[1][0]) * betaRate + 0.5f : v[0][0] + (v[1][0] - v[0][0]) * betaRate + 0.5f;
+        int A_x = v[0].pos[0] + (v[2].pos[0] - v[0].pos[0]) * alphaRate + 0.5f;
+        int B_x = isSecond ? v[1].pos[0] + (v[2].pos[0] - v[1].pos[0]) * betaRate + 0.5f : v[0].pos[0] + (v[1].pos[0] - v[0].pos[0]) * betaRate + 0.5f;
         // 这条扫描线从左（A）画向右（B）。
         if (A_x > B_x) std::swap(A_x, B_x);
         for (int j = A_x; j <= B_x; j++) {
             // 由外层的 i 确保光栅化每一行，而不是使用走样的  A.y 或 B.y。
             int x = j;
-            int y = v[0][1] + i;
+            int y = v[0].pos[1] + i;
 
             if (x < 0 || x > WIDTH - 1 || y < 0 || y > HEIGHT - 1) {
                 continue;
@@ -215,18 +208,18 @@ void Rasterizer::RasterizeTriangle_SL(Model* model, Eigen::Vector3f* vp, Eigen::
             float b = tmpBC[1];
             float c = tmpBC[2];
 
-            float a_div_w = a / (float)v[0][3];
-            float b_div_w = b / (float)v[1][3];
-            float c_div_w = c / (float)v[2][3];
+            float a_div_w = a / (float)v[0].pos[3];
+            float b_div_w = b / (float)v[1].pos[3];
+            float c_div_w = c / (float)v[2].pos[3];
             float z = 1.0f / (a_div_w + b_div_w + c_div_w);
-            float zp = a_div_w * v[0][2] + b_div_w * v[1][2] + c_div_w * v[2][2];
+            float zp = a_div_w * v[0].pos[2] + b_div_w * v[1].pos[2] + c_div_w * v[2].pos[2];
             zp *= z;
 
             if (zp <= z_bufer[index]) {
                 z_bufer[index] = zp;
 
-                Eigen::Vector3f viewPos = Interpolate(a, b, c, vp[0], vp[1], vp[2]);
-                Eigen::Vector4f tmpN = Interpolate(a, b, c, n[0], n[1], n[2]);
+                Eigen::Vector3f viewPos = Interpolate(a, b, c, v[0].viewPos, v[1].viewPos, v[2].viewPos);
+                Eigen::Vector4f tmpN = Interpolate(a, b, c, v[0].normal, v[1].normal, v[2].normal);
 
                 Eigen::Vector3f normal =Eigen::Vector3f(tmpN[0], tmpN[1], tmpN[2]).normalized();
                 Eigen::Vector3f viewDir = (eyePos - viewPos).normalized();
@@ -236,7 +229,7 @@ void Rasterizer::RasterizeTriangle_SL(Model* model, Eigen::Vector3f* vp, Eigen::
                 Eigen::Vector3f ViewPlusLight = viewDir + lightDir;
                 Eigen::Vector3f halfDir = ((ViewPlusLight) / (ViewPlusLight).dot(ViewPlusLight)).normalized();
 
-                Eigen::Vector2f tx = Interpolate(a, b, c, uv[0], uv[1], uv[2]);
+                Eigen::Vector2f tx = Interpolate(a, b, c, v[0].uv, v[1].uv, v[2].uv);
                 TGAColor tgaColor = model->diffuse(tx);
                 int b = tgaColor.bgra[0];
                 int g = tgaColor.bgra[1];
