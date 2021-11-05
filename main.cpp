@@ -22,8 +22,8 @@ int main() {
     VertexShader vs(angleY, scale, move, eyePos, fru);
 
     // 准备光栅化器。
-    Light light = {{1,1,1}, {1,2,3}, {150,200,250}};
-    Rasterizer r(light);
+    Light light = {{-1,1,1}, {5,5,1}, {150,200,250}};
+    Rasterizer r(light, eyePos);
     
     // 准备深度缓冲。
     float* z_buffer = new float[WIDTH * HEIGHT];
@@ -40,6 +40,9 @@ int main() {
         // TODO: 把顶点数据封装成一个类
         Eigen::Vector4f vertex[3];
         Eigen::Vector4f normal[3];
+        Eigen::Vector2f uv[3];
+
+        Eigen::Vector3f viewPos[3];
 
         // 装配三角形。
         for (int j = 0; j < 3; j++) {
@@ -48,13 +51,15 @@ int main() {
 
             Eigen::Vector3f tmpN = model->normal(i, j);
             normal[j] = Eigen::Vector4f(tmpN[0], tmpN[1], tmpN[2], 0.f);
+
+            uv[j] = model->uv(i, j);
         }
 
         // 应用变换矩阵。
-        vs.Transform(vertex, normal);
+        vs.Transform(vertex, normal, viewPos);
 
-        r.RasterizeTriangle_AABB(vertex, normal, z_buffer);
-        //r.RasterizeTriangle_SL(vertex, normal, z_buffer);
+        //r.RasterizeTriangle_AABB(vertex, normal, z_buffer);
+        r.RasterizeTriangle_SL(model, viewPos, vertex, normal, uv, z_buffer);
         //for (int j = 0; j < 3; j++) {
         //    r.BHLine(vertex[j], vertex[(j + 1) % 3], WHITE);
         //}

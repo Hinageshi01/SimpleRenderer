@@ -64,13 +64,17 @@ inline Eigen::Matrix4f VertexShader::GetViewMatrix() {
     return Mview;
 }
 
-void VertexShader::Transform(Eigen::Vector4f* vertex, Eigen::Vector4f* normal) {
+void VertexShader::Transform(Eigen::Vector4f* vertex, Eigen::Vector4f* normal, Eigen::Vector3f* viewPos) {
     Eigen::Matrix4f model = GetModelMatrix();
     Eigen::Matrix4f view = GetViewMatrix();
 
     Eigen::Matrix4f modelView = view * model;
     Eigen::Matrix4f mvp = projection * modelView;
     Eigen::Matrix4f modelViewInvTran = modelView.inverse().transpose();
+
+    for (int i = 0; i < 3; i++) {
+        viewPos[i] = (modelView * vertex[i]).head<3>();
+    }
 
     for (int i = 0; i < 3; i++) {
         Eigen::Vector4f v = mvp * vertex[i];

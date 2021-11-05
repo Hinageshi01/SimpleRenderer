@@ -17,7 +17,7 @@ public:
 	// view 矩阵。
 	inline Eigen::Matrix4f GetViewMatrix();
 	// 变换至屏幕空间坐标系。
-	void Transform(Eigen::Vector4f* vertex, Eigen::Vector4f* normal);
+	void Transform(Eigen::Vector4f* vertex, Eigen::Vector4f* normal, Eigen::Vector3f* viewPos);
 
 private:
 	float angleY;
