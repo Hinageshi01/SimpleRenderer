@@ -61,15 +61,17 @@ inline Eigen::Vector2f Rasterizer::Interpolate(const float& a, const float& b, c
 }
 
 void Rasterizer::RasterizeTriangle_SL(Vertex* v,  Model* const model, float* z_bufer) {
-    Eigen::Vector3f a(v[0].pos[0], v[0].pos[1], 0.f);
-    Eigen::Vector3f b(v[1].pos[0], v[1].pos[1], 0.f);
-    Eigen::Vector3f c(v[2].pos[0], v[2].pos[1], 0.f);
+    float xa = v[0].pos[0];
+    float xb = v[1].pos[0];
+    float xc = v[2].pos[0];
+    float ya = v[0].pos[1];
+    float yb = v[1].pos[1];
+    float yc = v[2].pos[1];
+    // 这里是在求 ab 与 bc 向量的叉乘并判断结果的 z 分量是否朝向屏幕。
+    // 我们并不关心面法向量的 xy 分量，故简化一下运算。
+    float z = (xb - xa) * (yc - yb) - (yb - ya) * (xc - xb);
 
-    Eigen::Vector3f ab = b - a;
-    Eigen::Vector3f bc = c - b;
-    Eigen::Vector3f faceNormal = ab.cross(bc);
-    if (faceNormal[2] < 0) {
-        //TODO：这里只关心z分量，优化一下矩阵运算
+    if (z < 0) {
         // 当三角面背对视点时，不做光栅化。
         return;
     }
@@ -90,6 +92,7 @@ void Rasterizer::RasterizeTriangle_SL(Vertex* v,  Model* const model, float* z_b
         std::swap(v[1], v[2]);
     }
 
+    // 将三角形向竖直方向拉伸一点，否则容易出现光栅化不到的像素
     v[0].pos[1] = std::floor(v[0].pos[1]);
     v[2].pos[1] = std::ceil(v[2].pos[1]);
 
@@ -140,9 +143,9 @@ void Rasterizer::RasterizeTriangle_SL(Vertex* v,  Model* const model, float* z_b
                 // 重要的三个向量，均以着色点为出发点。
                 Eigen::Vector3f normal =Eigen::Vector3f(tmpN[0], tmpN[1], tmpN[2]).normalized();
                 Eigen::Vector3f viewDir = (eyePos - viewPos).normalized();
-                Eigen::Vector3f lightDir = (light.position - viewPos).normalized();
+                Eigen::Vector3f lightDir = (light.position - viewPos);
+                lightDir = lightDir.normalized();
 
-                float r2 = std::max(1.f, lightDir.dot(lightDir));
                 Eigen::Vector3f VL = viewDir + lightDir;
                 Eigen::Vector3f halfDir = ((VL) / (VL).dot(VL)).normalized();
 
@@ -163,7 +166,7 @@ void Rasterizer::RasterizeTriangle_SL(Vertex* v,  Model* const model, float* z_b
 
                 Eigen::Vector3f inten;
                 for (int k = 0; k < 3; k++) {
-                    inten[k] = kd[k] * ld / r2 + ks * ls / r2 + ka;
+                    inten[k] = kd[k] * ld  + ks * ls + ka;
                     inten[k] = std::clamp(inten[k], 0.f, 1.f);
                 }
                 COLORREF color = RGB(inten[0] * 255, inten[1] * 255, inten[2] * 255);

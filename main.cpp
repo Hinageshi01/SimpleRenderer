@@ -21,7 +21,7 @@ int main() {
     VertexShader vs(angleY, scale, move, eyePos, fru);
 
     // 准备光栅化器。
-    Light light = {{-1,1,1}, {5,5,1}, {150,200,250}};
+    Light light = {{-1,1,1}, {5, 5, 1}, {150,200,250}};
     Rasterizer r(light, eyePos);
     
     // 准备深度缓冲。
