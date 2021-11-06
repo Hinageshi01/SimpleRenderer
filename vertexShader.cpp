@@ -3,20 +3,19 @@
 VertexShader::VertexShader(const float& a, const float& s, const Eigen::Vector3f& m, const Eigen::Vector3f& e, const Frustum& f) :
     angleY(a), scale(s), move(m), fru(f)
 {
-    near = fru.zNear;
-    far = fru.zFar;
-
     float radian = fru.fov * MY_PI / 180.f;
     float t = tan(radian / 2) * abs(fru.zNear);
     float b = -t;
     float r = fru.aspect * t;
     float l = -r;
 
+    // 计算 view 矩阵。
     view << 1, 0, 0, -e[0],
         0, 1, 0, -e[1],
         0, 0, 1, -e[2],
         0, 0, 0, 1;
 
+    // 计算 projection 矩阵。
     Eigen::Matrix4f Mpo;
     Mpo << fru.zNear, 0, 0, 0,
         0, fru.zNear, 0, 0,
@@ -25,7 +24,7 @@ VertexShader::VertexShader(const float& a, const float& s, const Eigen::Vector3f
     Eigen::Matrix4f Mo;
     Mo << 2 / (r - l), 0, 0, (r + l) / -2,
         0, 2 / (t - b), 0, (t + b) / -2,
-        0, 0, 2 / (near - far), (near + far) / -2,
+        0, 0, 2 / (fru.zNear - fru.zFar), (fru.zNear + fru.zFar) / -2,
         0, 0, 0, 1;
     projection = Mo * Mpo;
 }
@@ -61,8 +60,11 @@ inline Eigen::Matrix4f VertexShader::GetModelMatrix() {
 void VertexShader::Transform(Vertex* vertex) {
     Eigen::Matrix4f model = GetModelMatrix();
 
+    // 用于保留 viewSpace 坐标系。
     Eigen::Matrix4f modelView = view * model;
+    // mvp 矩阵。
     Eigen::Matrix4f mvp = projection * modelView;
+    // mv 矩阵的逆的转置，用于处理顶点法向量。
     Eigen::Matrix4f modelViewInvTran = modelView.inverse().transpose();
 
     for (int i = 0; i < 3; i++) {
@@ -77,8 +79,8 @@ void VertexShader::Transform(Vertex* vertex) {
         v[2] /= v[3];
         v[3] /= v[3];
 
-        float f1 = (far - near) / 2.f;
-        float f2 = (far + near) / 2.f;
+        float f1 = (fru.zFar - fru.zNear) / 2.f;
+        float f2 = (fru.zFar + fru.zNear) / 2.f;
         v[0] = float(0.5f * WIDTH * (v[0] + 1.f));
         v[1] = float(0.5f * HEIGHT * (v[1] + 1.f));
         v[2] = v[2] * f1 + f2;
