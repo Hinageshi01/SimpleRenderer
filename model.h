@@ -20,7 +20,7 @@ public:
     int nverts();
     int nfaces();
     Eigen::Vector3f normal(int iface, int nthvert);
-    Eigen::Vector3f normal(Eigen::Vector2f uv);
+    Eigen::Vector3f normalMap(Eigen::Vector2f uv);
     Eigen::Vector3f vert(int i);
     Eigen::Vector3f vert(int iface, int nthvert);
     Eigen::Vector2f uv(int iface, int nthvert);

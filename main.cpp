@@ -4,6 +4,10 @@
 #undef max
 #undef min
 
+int fun() {
+    return -1;
+}
+
 int main() {
     // 准备模型数据。
     Model* model = nullptr;
@@ -51,7 +55,7 @@ int main() {
         // Vertex Shader
         vs.Transform(vertex);
 
-        // 光栅化与 Fragment Shader
+        // 光栅化与 Fragement Shader
         r.RasterizeTriangle_SL(vertex, model, z_buffer);
     }
     float endTime = omp_get_wtime();

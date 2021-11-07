@@ -61,17 +61,17 @@ inline Eigen::Vector2f Rasterizer::Interpolate(const float& a, const float& b, c
 }
 
 void Rasterizer::RasterizeTriangle_SL(Vertex* v,  Model* const model, float* z_bufer) {
-    float xa = v[0].pos[0];
-    float xb = v[1].pos[0];
-    float xc = v[2].pos[0];
-    float ya = v[0].pos[1];
-    float yb = v[1].pos[1];
-    float yc = v[2].pos[1];
+    float a_x = v[0].pos[0];
+    float b_x = v[1].pos[0];
+    float c_x = v[2].pos[0];
+    float a_y = v[0].pos[1];
+    float b_y = v[1].pos[1];
+    float c_y = v[2].pos[1];
+
     // 这里是在求 ab 与 bc 向量的叉乘并判断结果的 z 分量是否朝向屏幕。
     // 我们并不关心面法向量的 xy 分量，故简化一下运算。
-    float z = (xb - xa) * (yc - yb) - (yb - ya) * (xc - xb);
-
-    if (z < 0) {
+    float triangle_z = (b_x - a_x) * (c_y - b_y) - (b_y - a_y) * (c_x - b_x);
+    if (triangle_z < 0) {
         // 当三角面背对视点时，不做光栅化。
         return;
     }
@@ -141,26 +141,44 @@ void Rasterizer::RasterizeTriangle_SL(Vertex* v,  Model* const model, float* z_b
                 Eigen::Vector4f tmpN = Interpolate(a, b, c, v[0].normal, v[1].normal, v[2].normal);
 
                 // 重要的三个向量，均以着色点为出发点。
-                Eigen::Vector3f normal =Eigen::Vector3f(tmpN[0], tmpN[1], tmpN[2]).normalized();
+                Eigen::Vector3f normal = tmpN.head<3>().normalized();
                 Eigen::Vector3f viewDir = (eyePos - viewPos).normalized();
-                Eigen::Vector3f lightDir = (light.position - viewPos);
-                lightDir = lightDir.normalized();
+                Eigen::Vector3f lightDir = (light.position - viewPos).normalized();
 
                 Eigen::Vector3f VL = viewDir + lightDir;
                 Eigen::Vector3f halfDir = ((VL) / (VL).dot(VL)).normalized();
 
-                // 对 uv 插值，用结果去贴图中采样，然后将 rgb 作为 kd 使用。
-                Eigen::Vector2f tx = Interpolate(a, b, c, v[0].uv, v[1].uv, v[2].uv);
-                TGAColor tgaColor = model->diffuse(tx);
-                int b = tgaColor.bgra[0];
-                int g = tgaColor.bgra[1];
-                int r = tgaColor.bgra[2];
+                // 对 uv 插值。
+                Eigen::Vector2f uv = Interpolate(a, b, c, v[0].uv, v[1].uv, v[2].uv);
+
+                // 切线空间法线贴图。
+                Eigen::Matrix3f A;
+                Eigen::Vector3f tmp1 = v[1].viewPos - v[0].viewPos;
+                Eigen::Vector3f tmp2 = v[2].viewPos - v[0].viewPos;
+                A << tmp1[0], tmp1[1], tmp1[2],
+                    tmp2[0], tmp2[1], tmp2[2],
+                    normal[0], normal[1], normal[2];
+                Eigen::Matrix3f AI = A.inverse();
+                Eigen::Vector3f i = (AI * Eigen::Vector3f(v[1].uv[0] - v[0].uv[0], v[2].uv[0] - v[0].uv[0], 0)).normalized();
+                Eigen::Vector3f j = (AI * Eigen::Vector3f(v[1].uv[1] - v[0].uv[1], v[2].uv[1] - v[0].uv[1], 0)).normalized();
+                Eigen::Matrix3f B;
+                B << i[0], i[1], i[2],
+                    j[0], j[1], j[2],
+                    normal[0], normal[1], normal[2];
+                normal = (B * model->normalMap(uv)).normalized();
+
+                // 去贴图中采样，然后将 rgb 作为 kd 使用。
+                unsigned char* bgra = model->diffuse(uv).bgra;
+                int b = bgra[0];
+                int g = bgra[1];
+                int r = bgra[2];
 
                 Eigen::Vector3f kd = Eigen::Vector3f(r, g, b) / 255.f;
                 float ks = 0.3f;
                 float ka = 0.02f;
 
-                float p = 30.f;
+                // 去高光贴图中采样，作为计算 specular 项时的幂次方使用。 
+                float p = model->specular(uv);
                 float ld = std::max(0.f, normal.dot(lightDir));
                 float ls = pow(std::max(0.f, normal.dot(halfDir)), p);
 

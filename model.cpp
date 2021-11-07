@@ -83,7 +83,7 @@ TGAColor Model::diffuse(Eigen::Vector2f uvf) {
     return diffusemap_.get(uv[0], uv[1]);
 }
 
-Eigen::Vector3f Model::normal(Eigen::Vector2f uvf) {
+Eigen::Vector3f Model::normalMap(Eigen::Vector2f uvf) {
     Eigen::Vector2i uv(uvf[0] * normalmap_.get_width(), uvf[1] * normalmap_.get_height());
     TGAColor c = normalmap_.get(uv[0], uv[1]);
     Eigen::Vector3f res;
