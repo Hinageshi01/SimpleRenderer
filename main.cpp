@@ -20,7 +20,7 @@ int main() {
     VertexShader vs(angleY, scale, move, eyePos, fru);
 
     // 准备光栅化器。
-    Light light = {{-1,1,1}, {5, 5, 1}, {150,200,250}};
+    Light light = {{-1,1,1}, {-10, 10, 10}, {150,200,250}};
     Rasterizer r(light, eyePos);
     
     // 准备深度缓冲。
@@ -43,16 +43,16 @@ int main() {
             }
             switch (code) {
                 case 0x41:
-                    angleY += 3;
+                    angleY += 3.f;
                     break;
                 case 0x44:
-                    angleY -= 3;
+                    angleY -= 3.f;
                     break;
                 case 0x53:
-                    scale -= 0.3;
+                    scale -= 0.3f;
                     break;
                 case 0x57:
-                    scale += 0.3;
+                    scale += 0.3f;
                     break;
             }
         }
