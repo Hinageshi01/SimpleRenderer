@@ -10,7 +10,7 @@ class VertexShader
 public:
 	VertexShader(const float& a, const float& s, const Eigen::Vector3f& m, const Eigen::Vector3f& e, const Frustum& f);
 
-	// 更新位置信息。
+	// 更新模型的位置信息。
 	void Update(const float& a, const float& s);
 	// 计算 model 矩阵。
 	inline Eigen::Matrix4f GetModelMatrix();
@@ -18,6 +18,7 @@ public:
 	void Transform(Vertex* v);
 
 private:
+	// model 矩阵所需要的数据。
 	float angleY;
 	float scale;
 	Eigen::Vector3f move;

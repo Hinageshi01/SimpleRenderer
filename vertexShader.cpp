@@ -9,12 +9,6 @@ VertexShader::VertexShader(const float& a, const float& s, const Eigen::Vector3f
     float r = fru.aspect * t;
     float l = -r;
 
-    // 计算 view 矩阵。
-    view << 1, 0, 0, -e[0],
-        0, 1, 0, -e[1],
-        0, 0, 1, -e[2],
-        0, 0, 0, 1;
-
     // 计算 projection 矩阵。
     Eigen::Matrix4f Mpo;
     Mpo << fru.zNear, 0, 0, 0,
@@ -27,6 +21,12 @@ VertexShader::VertexShader(const float& a, const float& s, const Eigen::Vector3f
         0, 0, 2 / (fru.zNear - fru.zFar), (fru.zNear + fru.zFar) / -2,
         0, 0, 0, 1;
     projection = Mo * Mpo;
+
+    // 计算 view 矩阵。
+    view << 1, 0, 0, -e[0],
+        0, 1, 0, -e[1],
+        0, 0, 1, -e[2],
+        0, 0, 0, 1;
 }
 
 void VertexShader::Update(const float& a, const float& s) {
@@ -43,9 +43,9 @@ inline Eigen::Matrix4f VertexShader::GetModelMatrix() {
         0, 0, 0, 1;
 
     Eigen::Matrix4f Mscale;
-    Mscale << 3.5, 0, 0, 0,
-        0, 3.5, 0, 0,
-        0, 0, 3.5, 0,
+    Mscale << scale, 0, 0, 0,
+        0, scale, 0, 0,
+        0, 0, scale, 0,
         0, 0, 0, 1;
 
     Eigen::Matrix4f Mmove;
@@ -74,11 +74,13 @@ void VertexShader::Transform(Vertex* vertex) {
     for (int i = 0; i < 3; i++) {
         Eigen::Vector4f v = mvp * vertex[i].pos;
 
+        // 归一化至 NDC 坐标系。
         v[0] /= v[3];
         v[1] /= v[3];
         v[2] /= v[3];
         v[3] /= v[3];
 
+        // 视口变换。
         float f1 = (fru.zFar - fru.zNear) / 2.f;
         float f2 = (fru.zFar + fru.zNear) / 2.f;
         v[0] = float(0.5f * WIDTH * (v[0] + 1.f));
@@ -86,6 +88,7 @@ void VertexShader::Transform(Vertex* vertex) {
         v[2] = v[2] * f1 + f2;
         vertex[i].pos = v;
 
+        // 法向量变换。
         vertex[i].normal = modelViewInvTran * vertex[i].normal;
     }
 }

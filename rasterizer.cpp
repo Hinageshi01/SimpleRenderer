@@ -136,7 +136,7 @@ void Rasterizer::RasterizeTriangle_SL(Vertex* v,  Model* const model, float* z_b
             int index = x + y * WIDTH;
             if (zp <= z_bufer[index]) {
                 z_bufer[index] = zp;
-
+                
                 Eigen::Vector3f viewPos = Interpolate(a, b, c, v[0].viewPos, v[1].viewPos, v[2].viewPos);
                 Eigen::Vector4f tmpN = Interpolate(a, b, c, v[0].normal, v[1].normal, v[2].normal);
 
@@ -188,7 +188,7 @@ void Rasterizer::RasterizeTriangle_SL(Vertex* v,  Model* const model, float* z_b
                     inten[k] = std::clamp(inten[k], 0.f, 1.f);
                 }
                 COLORREF color = RGB(inten[0] * 255, inten[1] * 255, inten[2] * 255);
-
+                
                 putpixel(x, y, color);
             }
         }
