@@ -28,39 +28,38 @@ int main() {
 
     ExMessage msg;
     float sumTime = 0;
-    int sumFrame = 0;
+    unsigned int sumFrame = 0;
     initgraph(WIDTH, HEIGHT);
 
     // 主循环。
     while (true) {
         // 处理键盘输入。
+        flushmessage();
         msg = getmessage(EM_KEY);
-        if (msg.message == WM_KEYDOWN) {
-            BYTE code = msg.vkcode;
-            if (code == VK_ESCAPE || code == 0x0D) {
-                closegraph();
+        if (msg.vkcode == VK_ESCAPE || msg.vkcode == 0x0D) {
+            closegraph();
+            break;
+        }
+        switch (msg.vkcode) {
+            case 0x41:
+                angleY += 5.f;
                 break;
-            }
-            switch (code) {
-                case 0x41:
-                    angleY += 3.f;
-                    break;
-                case 0x44:
-                    angleY -= 3.f;
-                    break;
-                case 0x53:
-                    scale -= 0.3f;
-                    break;
-                case 0x57:
-                    scale += 0.3f;
-                    break;
-            }
+            case 0x44:
+                angleY -= 5.f;
+                break;
+            case 0x53:
+                scale -= 0.3f;
+                break;
+            case 0x57:
+                scale += 0.3f;
+                break;
         }
         vs.Update(angleY, scale);
 
+        memset(z_buffer, std::numeric_limits<float>::max(), WIDTH * HEIGHT * sizeof(float));
+        
         cleardevice();
         BeginBatchDraw();
-        memset(z_buffer, std::numeric_limits<float>::max(), WIDTH * HEIGHT * sizeof(float));
 
         float startTime = omp_get_wtime();
     #pragma omp parallel for
@@ -89,11 +88,9 @@ int main() {
         float endTime = omp_get_wtime();
         sumTime += (endTime - startTime);
         sumFrame++;
-
         FlushBatchDraw();
     }
-    EndBatchDraw();
-    std::cout << "Rendering 1 frame with averge " << sumTime / (float)sumFrame << " s" << std::endl;
+    std::cout << "Rendering " << sumFrame << " frame with averge " << sumTime / (float)sumFrame << " s" << std::endl;
 
     return 0;
 }
