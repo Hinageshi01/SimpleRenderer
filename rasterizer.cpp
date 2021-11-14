@@ -129,9 +129,11 @@ void Rasterizer::RasterizeTriangle_SL(Vertex* v,  Model* const model, float* z_b
             float a_div_w = a / (float)v[0].pos[3];
             float b_div_w = b / (float)v[1].pos[3];
             float c_div_w = c / (float)v[2].pos[3];
-            float z = 1.0f / (a_div_w + b_div_w + c_div_w);
+            float z = 1.f / (a_div_w + b_div_w + c_div_w);
             float zp = a_div_w * v[0].pos[2] + b_div_w * v[1].pos[2] + c_div_w * v[2].pos[2];
             zp *= z;
+
+            //float zp = a * v[0].pos[2] + b * v[1].pos[2] + c * v[2].pos[2];
 
             int index = x + y * WIDTH;
             if (zp <= z_bufer[index]) {
