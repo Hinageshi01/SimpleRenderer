@@ -3,9 +3,9 @@
 #undef max
 #undef min
 
-Rasterizer::Rasterizer(const Light& l, const Eigen::Vector3f& e) :light(l), eyePos(e) {}
+Rasterizer::Rasterizer(const Light &l, const Eigen::Vector3f &e) :light(l), eyePos(e) {}
 
-void Rasterizer::BHLine(const Eigen::Vector4f& point0, const Eigen::Vector4f& point1) {
+void Rasterizer::BHLine(const Eigen::Vector4f &point0, const Eigen::Vector4f &point1) {
     Eigen::Vector4f p0 = point0;
     Eigen::Vector4f p1 = point1;
 
@@ -28,7 +28,7 @@ void Rasterizer::BHLine(const Eigen::Vector4f& point0, const Eigen::Vector4f& po
     int dx2 = std::abs(dx) << 1;
     int dk = dy2 - dx;
     int y = p0[1];
-    for (int x = p0[0]; x <= p1[0]; x++) {
+    for (int x = p0[0]; x <= p1[0]; ++x) {
         if (steep) {
             putpixel(y, x, WHITE);
         }
@@ -43,35 +43,30 @@ void Rasterizer::BHLine(const Eigen::Vector4f& point0, const Eigen::Vector4f& po
     }
 }
 
-inline Eigen::Vector3f Rasterizer::BarycentricCoor(const float& x, const float& y, const Vertex* v) {
+Eigen::Vector3f Rasterizer::BarycentricCoor(const float &x, const float &y, const Vertex* v) {
     float c1 = (x * (v[1].pos[1] - v[2].pos[1]) + (v[2].pos[0] - v[1].pos[0]) * y + v[1].pos[0] * v[2].pos[1] - v[2].pos[0] * v[1].pos[1]) / (v[0].pos[0] * (v[1].pos[1] - v[2].pos[1]) + (v[2].pos[0] - v[1].pos[0]) * v[0].pos[1] + v[1].pos[0] * v[2].pos[1] - v[2].pos[0] * v[1].pos[1]);
     float c2 = (x * (v[2].pos[1] - v[0].pos[1]) + (v[0].pos[0] - v[2].pos[0]) * y + v[2].pos[0] * v[0].pos[1] - v[0].pos[0] * v[2].pos[1]) / (v[1].pos[0] * (v[2].pos[1] - v[0].pos[1]) + (v[0].pos[0] - v[2].pos[0]) * v[1].pos[1] + v[2].pos[0] * v[0].pos[1] - v[0].pos[0] * v[2].pos[1]);
     float c3 = (x * (v[0].pos[1] - v[1].pos[1]) + (v[1].pos[0] - v[0].pos[0]) * y + v[0].pos[0] * v[1].pos[1] - v[1].pos[0] * v[0].pos[1]) / (v[2].pos[0] * (v[0].pos[1] - v[1].pos[1]) + (v[1].pos[0] - v[0].pos[0]) * v[2].pos[1] + v[0].pos[0] * v[1].pos[1] - v[1].pos[0] * v[0].pos[1]);
-    return Eigen::Vector3f(c1, c2, c3);
+    return { c1, c2, c3 };
 }
 
-inline Eigen::Vector4f Rasterizer::Interpolate(const float& a, const float& b, const float& c, const Eigen::Vector4f& v1, const Eigen::Vector4f& v2, const Eigen::Vector4f& v3) {
+Eigen::Vector4f Rasterizer::Interpolate(const float &a, const float &b, const float &c, const Eigen::Vector4f &v1, const Eigen::Vector4f &v2, const Eigen::Vector4f &v3) {
     return a * v1 + b * v2 + c * v3;
 }
-inline Eigen::Vector3f Rasterizer::Interpolate(const float& a, const float& b, const float& c, const Eigen::Vector3f& v1, const Eigen::Vector3f& v2, const Eigen::Vector3f& v3) {
+Eigen::Vector3f Rasterizer::Interpolate(const float &a, const float &b, const float &c, const Eigen::Vector3f &v1, const Eigen::Vector3f &v2, const Eigen::Vector3f &v3) {
     return a * v1 + b * v2 + c * v3;
 }
-inline Eigen::Vector2f Rasterizer::Interpolate(const float& a, const float& b, const float& c, const Eigen::Vector2f& v1, const Eigen::Vector2f& v2, const Eigen::Vector2f& v3) {
+Eigen::Vector2f Rasterizer::Interpolate(const float &a, const float &b, const float &c, const Eigen::Vector2f &v1, const Eigen::Vector2f &v2, const Eigen::Vector2f &v3) {
+    return a * v1 + b * v2 + c * v3;
+}
+float Rasterizer::Interpolate(const float &a, const float &b, const float &c, const float &v1, const float &v2, const float &v3) {
     return a * v1 + b * v2 + c * v3;
 }
 
-void Rasterizer::RasterizeTriangle_SL(Vertex* v,  Model* const model, float* z_bufer) {
-    float a_x = v[0].pos[0];
-    float b_x = v[1].pos[0];
-    float c_x = v[2].pos[0];
-    float a_y = v[0].pos[1];
-    float b_y = v[1].pos[1];
-    float c_y = v[2].pos[1];
-
+void Rasterizer::RasterizeTriangle_SL(Vertex *v, Model *model, float *z_bufer) {
     // 这里是在求 ab 与 bc 向量的叉乘并判断结果的 z 分量是否朝向屏幕。
     // 我们并不关心面法向量的 xy 分量，故简化一下运算。
-    float triangle_z = (b_x - a_x) * (c_y - b_y) - (b_y - a_y) * (c_x - b_x);
-    if (triangle_z < 0) {
+    if ((v[1].pos[0] - v[0].pos[0]) * (v[2].pos[1] - v[1].pos[1]) - (v[1].pos[1] - v[0].pos[1]) * (v[2].pos[0] - v[1].pos[0]) < 0) {
         // 当三角面背对视点时，不做光栅化。
         return;
     }
@@ -99,19 +94,19 @@ void Rasterizer::RasterizeTriangle_SL(Vertex* v,  Model* const model, float* z_b
     int totalHeight = v[2].pos[1] - v[0].pos[1] + 0.5f;
     int firstHeight = v[1].pos[1] - v[0].pos[1] + 0.5f;
     int secondHeight = v[2].pos[1] - v[1].pos[1] + 0.5f;
-    for (int i = 1; i < totalHeight; i++) {
+    for (int i = 1; i < totalHeight; ++i) {
         bool isSecond = (i > firstHeight) || (v[1].pos[1] == v[0].pos[1]);
         int crtHeight = isSecond ? secondHeight : firstHeight;
-        float alphaRate = i / (float)totalHeight;
-        float betaRate = (i - (isSecond ? firstHeight : 0)) / (float)crtHeight;
+        float rate1 = i / (float)totalHeight;
+        float rate2 = (i - (isSecond ? firstHeight : 0)) / (float)crtHeight;
 
-        int A_x = v[0].pos[0] + (v[2].pos[0] - v[0].pos[0]) * alphaRate + 0.5f;
-        int B_x = isSecond ? v[1].pos[0] + (v[2].pos[0] - v[1].pos[0]) * betaRate + 0.5f : v[0].pos[0] + (v[1].pos[0] - v[0].pos[0]) * betaRate + 0.5f;
+        int A_x = v[0].pos[0] + (v[2].pos[0] - v[0].pos[0]) * rate1 + 0.5f;
+        int B_x = isSecond ? (v[1].pos[0] + (v[2].pos[0] - v[1].pos[0]) * rate2 + 0.5f) : (v[0].pos[0] + (v[1].pos[0] - v[0].pos[0]) * rate2 + 0.5f);
 
-        // 这条扫描线从左（A）画向右（B）。
+        // 这条扫描线从左（点A）画向右（点B）。
         if (A_x > B_x) std::swap(A_x, B_x);
-        for (int j = A_x; j <= B_x; j++) {
-            // 由外层的 i 确保光栅化每一行，而不是使用走样的  A.y 或 B.y。
+        for (int j = A_x; j <= B_x; ++j) {
+            // 由外层的 i 确保光栅化每一行，而不是使用丢失精度的 A.y 或 B.y。
             int x = j;
             int y = v[0].pos[1] + i;
 
@@ -119,37 +114,32 @@ void Rasterizer::RasterizeTriangle_SL(Vertex* v,  Model* const model, float* z_b
                 continue;
             }
 
-            // 计算重心坐标。
+            // 计算重心坐标以及透视矫正插值，先将深度插值出来，直接跳过被深度测试剔除的片元。
             Eigen::Vector3f tmpBC = BarycentricCoor(x + 0.5f, y + 0.5f, v);
-            float a = tmpBC[0];
-            float b = tmpBC[1];
-            float c = tmpBC[2];
-
-            // 先将深度插值出来，直接跳过被深度测试剔除的片元。
-            float a_div_w = a / (float)v[0].pos[3];
-            float b_div_w = b / (float)v[1].pos[3];
-            float c_div_w = c / (float)v[2].pos[3];
-            float z = 1.f / (a_div_w + b_div_w + c_div_w);
-            float zp = a_div_w * v[0].pos[2] + b_div_w * v[1].pos[2] + c_div_w * v[2].pos[2];
-            zp *= z;
-
-            //float zp = a * v[0].pos[2] + b * v[1].pos[2] + c * v[2].pos[2];
+            // pos[3] 存储的是原本 w 分量的倒数。
+            float a = tmpBC[0] / v[0].pos[3];
+            float b = tmpBC[1] / v[1].pos[3];
+            float c = tmpBC[2] / v[2].pos[3];
+            float div = 1.f / (a + b + c);
+            a *= div;
+            b *= div;
+            c *= div;
+            float z = Interpolate(a, b, c, v[0].pos[2], v[1].pos[2], v[2].pos[2]);
 
             int index = x + y * WIDTH;
-            if (zp <= z_bufer[index]) {
-                z_bufer[index] = zp;
+            if (z <= z_bufer[index]) {
+                z_bufer[index] = z;
                 
+                // 重心坐标插值。
                 Eigen::Vector3f viewPos = Interpolate(a, b, c, v[0].viewPos, v[1].viewPos, v[2].viewPos);
                 Eigen::Vector4f tmpN = Interpolate(a, b, c, v[0].normal, v[1].normal, v[2].normal);
+                Eigen::Vector2f uv = Interpolate(a, b, c, v[0].uv, v[1].uv, v[2].uv);
 
                 // 重要的几个向量，均以着色点为出发点。
                 Eigen::Vector3f normal = tmpN.head<3>().normalized();
                 Eigen::Vector3f viewDir = (eyePos - viewPos).normalized();
                 Eigen::Vector3f lightDir = (light.position - viewPos).normalized();
                 Eigen::Vector3f halfDir = (viewDir + lightDir).normalized();
-
-                // 对 uv 插值。
-                Eigen::Vector2f uv = Interpolate(a, b, c, v[0].uv, v[1].uv, v[2].uv);
 
                 // 切线空间法线贴图。
                 Eigen::Matrix3f A;
@@ -169,11 +159,7 @@ void Rasterizer::RasterizeTriangle_SL(Vertex* v,  Model* const model, float* z_b
 
                 // 去贴图中采样，然后将 rgb 作为 kd 使用。
                 unsigned char* bgra = model->diffuse(uv).bgra;
-                int b = bgra[0];
-                int g = bgra[1];
-                int r = bgra[2];
-
-                Eigen::Vector3f kd = Eigen::Vector3f(r, g, b) / 255.f;
+                Eigen::Vector3f kd = Eigen::Vector3f(bgra[2], bgra[1], bgra[0]) / 255.f;
                 float ks = 0.3f;
                 float ka = 0.02f;
 
@@ -183,7 +169,7 @@ void Rasterizer::RasterizeTriangle_SL(Vertex* v,  Model* const model, float* z_b
                 float ls = pow(std::max(0.f, normal.dot(halfDir)), p);
 
                 Eigen::Vector3f inten;
-                for (int k = 0; k < 3; k++) {
+                for (int k = 0; k < 3; ++k) {
                     inten[k] = kd[k] * ld  + ks * ls + ka;
                     inten[k] = std::clamp(inten[k], 0.f, 1.f);
                 }
@@ -195,6 +181,6 @@ void Rasterizer::RasterizeTriangle_SL(Vertex* v,  Model* const model, float* z_b
     }
 }
 
-inline void Rasterizer::WorldToScreen(Eigen::Vector4f& v) {
+void Rasterizer::WorldToScreen(Eigen::Vector4f &v) {
     v = Eigen::Vector4f(int((v[0] + 1.) * WIDTH / 2. + 0.5), HEIGHT - int((v[1] + 1.) * HEIGHT / 2. + 0.5), v[2], 1.f);
 }
