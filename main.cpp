@@ -12,7 +12,7 @@ int main() {
     //model = new Model("obj/diablo3_pose/diablo3_pose.obj");
 
     // 准备顶点着色器。
-    float angleY = 0.f;
+    float angleY = 15.f;
     float scale = 3.5f;
     Eigen::Vector3f move = {0,0.1f,0};
     Eigen::Vector3f eyePos = {0,0,10};
@@ -27,8 +27,7 @@ int main() {
     float* z_buffer = new float[WIDTH * HEIGHT];
 
     ExMessage msg;
-    float sumTime = 0;
-    unsigned int sumFrame = 0;
+    float sumTime = 0, sumFrame = 0;
     initgraph(WIDTH, HEIGHT);
 
     // 主循环。
@@ -36,7 +35,7 @@ int main() {
         // 处理键盘输入。
         flushmessage();
         msg = getmessage(EM_KEY);
-        if (msg.vkcode == VK_ESCAPE || msg.vkcode == 0x0D) {
+        if (msg.vkcode == VK_ESCAPE || msg.vkcode == VK_RETURN) {
             closegraph();
             break;
         }
@@ -63,13 +62,13 @@ int main() {
 
         float startTime = omp_get_wtime();
     #pragma omp parallel for
-        for (int i = 0; i < model->nfaces(); i++) {
+        for (int i = 0; i < model->nfaces(); ++i) {
             // 这个循环里遍历所有三角面。
             std::vector<int> face = model->face(i);
 
             // 装配三角形。
             Vertex vertex[3];
-            for (int j = 0; j < 3; j++) {
+            for (int j = 0; j < 3; ++j) {
                 Eigen::Vector3f tmpP = model->vert(face[j]);
                 vertex[j].pos = Eigen::Vector4f(tmpP[0], tmpP[1], tmpP[2], 1.f);
 
@@ -82,15 +81,15 @@ int main() {
             // 顶点着色器。
             vs.Transform(vertex);
 
-            // 光栅化与片元着色器。
+            // 光栅化器与片元着色器。
             r.RasterizeTriangle_SL(vertex, model, z_buffer);
         }
         float endTime = omp_get_wtime();
         sumTime += (endTime - startTime);
-        sumFrame++;
+        ++sumFrame;
         FlushBatchDraw();
     }
-    std::cout << "Rendering " << sumFrame << " frame with averge " << sumTime / (float)sumFrame << " s" << std::endl;
+    std::cout << "Rendered " << sumFrame << " frame with averge " << sumTime / sumFrame << " s" << std::endl;
 
     return 0;
 }

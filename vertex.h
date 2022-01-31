@@ -11,5 +11,4 @@ public:
 
 	// viewSpace 坐标系下的顶点坐标。
 	Eigen::Vector3f viewPos;
-
 };

@@ -1,6 +1,6 @@
 #include "model.h"
 
-Model::Model(const char* filename) : verts_(), faces_(), norms_(), uv_(), diffusemap_(), normalmap_(), specularmap_() {
+Model::Model(const char *filename) : verts_(), faces_(), norms_(), uv_(), diffusemap_(), normalmap_(), specularmap_() {
     std::ifstream in;
     in.open(filename, std::ifstream::in);
     if (in.fail()) return;
@@ -57,7 +57,7 @@ int Model::nfaces() {
 std::vector<int> Model::face(int idx) {
     std::vector<int> face;
     for (int i = 0; i < (int)faces_[idx].size(); i++) face.push_back(faces_[idx][i][0]);
-    return face;
+    return std::move(face);
 }
 
 Eigen::Vector3f Model::vert(int i) {
@@ -68,7 +68,7 @@ Eigen::Vector3f Model::vert(int iface, int nthvert) {
     return verts_[faces_[iface][nthvert][0]];
 }
 
-void Model::load_texture(std::string filename, const char* suffix, TGAImage& img) {
+void Model::load_texture(std::string filename, const char *suffix, TGAImage &img) {
     std::string texfile(filename);
     size_t dot = texfile.find_last_of(".");
     if (dot != std::string::npos) {
