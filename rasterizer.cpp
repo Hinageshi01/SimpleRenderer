@@ -116,10 +116,10 @@ void Rasterizer::RasterizeTriangle_SL(Vertex *v, Model *model, float *z_bufer) {
 
             // 计算重心坐标以及透视矫正插值，先将深度插值出来，直接跳过被深度测试剔除的片元。
             Eigen::Vector3f tmpBC = BarycentricCoor(x + 0.5f, y + 0.5f, v);
-            // pos[3] 存储的是原本 w 分量的倒数。
-            float a = tmpBC[0] / v[0].pos[3];
-            float b = tmpBC[1] / v[1].pos[3];
-            float c = tmpBC[2] / v[2].pos[3];
+            // pos[3] 存储的是 ViewSpace 中的 1/z。
+            float a = tmpBC[0] * v[0].pos[3];
+            float b = tmpBC[1] * v[1].pos[3];
+            float c = tmpBC[2] * v[2].pos[3];
             float div = 1.f / (a + b + c);
             a *= div;
             b *= div;

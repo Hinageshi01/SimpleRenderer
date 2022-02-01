@@ -71,20 +71,20 @@ void VertexShader::Transform(Vertex *vertex) {
         // 给片元着色器提供用于计算光照的线性空间坐标。
         vertex[i].viewPos = (modelView * vertex[i].pos).head<3>();
 
-        Eigen::Vector4f v = mvp * vertex[i].pos;
+        Eigen::Vector4f p = mvp * vertex[i].pos;
 
         // 归一化至 NDC 坐标系。
-        v[3] = 1.f / v[3]; // 留着做透视矫正插值。
-        v[0] *= v[3];
-        v[1] *= v[3];
-        v[2] *= v[3];
+        p[3] = 1.f / p[3];
+        p[0] *= p[3];
+        p[1] *= p[3];
+        p[2] *= p[3];
 
         // 视口变换。
-        v[0] = float(0.5f * WIDTH * (v[0] + 1.f));
-        v[1] = float(0.5f * HEIGHT * (v[1] + 1.f));
+        p[0] = float(0.5f * WIDTH * (p[0] + 1.f));
+        p[1] = float(0.5f * HEIGHT * (p[1] + 1.f));
         //v[2] *= (fru.zFar - fru.zNear) / 2.f + (fru.zFar + fru.zNear) / 2.f;
 
-        vertex[i].pos = v;
+        vertex[i].pos = p;
 
         // 法向量变换。
         vertex[i].normal = modelViewInvTran * vertex[i].normal;
