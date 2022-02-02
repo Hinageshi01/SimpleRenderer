@@ -13,7 +13,7 @@ public:
 	// 在主循环中被调用，随着键盘输入更新模型的位置信息。
 	void Update(const float &a, const float &s);
 	// 计算 model 矩阵。
-	Eigen::Matrix4f GetModelMatrix();
+	inline Eigen::Matrix4f GetModelMatrix();
 	// 变换至屏幕空间坐标系。
 	void Transform(Vertex *v);
 

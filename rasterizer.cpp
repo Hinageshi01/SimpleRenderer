@@ -50,16 +50,8 @@ Eigen::Vector3f Rasterizer::BarycentricCoor(const float &x, const float &y, cons
     return { c1, c2, c3 };
 }
 
-Eigen::Vector4f Rasterizer::Interpolate(const float &a, const float &b, const float &c, const Eigen::Vector4f &v1, const Eigen::Vector4f &v2, const Eigen::Vector4f &v3) {
-    return a * v1 + b * v2 + c * v3;
-}
-Eigen::Vector3f Rasterizer::Interpolate(const float &a, const float &b, const float &c, const Eigen::Vector3f &v1, const Eigen::Vector3f &v2, const Eigen::Vector3f &v3) {
-    return a * v1 + b * v2 + c * v3;
-}
-Eigen::Vector2f Rasterizer::Interpolate(const float &a, const float &b, const float &c, const Eigen::Vector2f &v1, const Eigen::Vector2f &v2, const Eigen::Vector2f &v3) {
-    return a * v1 + b * v2 + c * v3;
-}
-float Rasterizer::Interpolate(const float &a, const float &b, const float &c, const float &v1, const float &v2, const float &v3) {
+template <typename T>
+T Rasterizer::Interpolate(const float &a, const float &b, const float &c, const T &v1, const T &v2, const T &v3) {
     return a * v1 + b * v2 + c * v3;
 }
 
@@ -157,21 +149,24 @@ void Rasterizer::RasterizeTriangle_SL(Vertex *v, Model *model, float *z_bufer) {
                     normal[0], normal[1], normal[2];
                 normal = (B * model->normalMap(uv)).normalized();
 
+                // 漫反射项
                 // 去贴图中采样，然后将 rgb 作为 kd 使用。
                 unsigned char* bgra = model->diffuse(uv).bgra;
                 Eigen::Vector3f kd = Eigen::Vector3f(bgra[2], bgra[1], bgra[0]) / 255.f;
-                float ks = 0.3f;
-                float ka = 0.02f;
+                float ld = std::max(0.f, normal.dot(lightDir));
 
+                // 高光项
+                float ks = 0.3f;
                 // 去高光贴图中采样，作为计算 specular 项时的幂次方使用。 
                 float p = model->specular(uv);
-                float ld = std::max(0.f, normal.dot(lightDir));
                 float ls = pow(std::max(0.f, normal.dot(halfDir)), p);
+
+                // 环境光项
+                float ka = 0.02f;
 
                 Eigen::Vector3f inten;
                 for (int k = 0; k < 3; ++k) {
-                    inten[k] = kd[k] * ld  + ks * ls + ka;
-                    inten[k] = std::clamp(inten[k], 0.f, 1.f);
+                    inten[k] = std::clamp(kd[k] * ld + ks * ls + ka, 0.f, 1.f);
                 }
                 COLORREF color = RGB(inten[0] * 255, inten[1] * 255, inten[2] * 255);
                 

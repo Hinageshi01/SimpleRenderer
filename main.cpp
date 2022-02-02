@@ -24,7 +24,7 @@ int main() {
     Rasterizer r(light, eyePos);
     
     // 准备深度缓冲。
-    float* z_buffer = new float[WIDTH * HEIGHT];
+    register float* z_buffer = new float[WIDTH * HEIGHT];
 
     ExMessage msg;
     float sumTime = 0, sumFrame = 0;
@@ -67,7 +67,7 @@ int main() {
             std::vector<int> face = model->face(i);
 
             // 装配三角形。
-            Vertex vertex[3];
+            register Vertex vertex[3];
             for (int j = 0; j < 3; ++j) {
                 Eigen::Vector3f tmpP = model->vert(face[j]);
                 vertex[j].pos = Eigen::Vector4f(tmpP[0], tmpP[1], tmpP[2], 1.f);
