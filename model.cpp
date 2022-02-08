@@ -57,7 +57,7 @@ int Model::nfaces() {
 std::vector<int> Model::face(int idx) {
     std::vector<int> face;
     for (int i = 0; i < (int)faces_[idx].size(); i++) face.push_back(faces_[idx][i][0]);
-    return std::move(face);
+    return face;
 }
 
 Eigen::Vector3f Model::vert(int i) {

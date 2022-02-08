@@ -20,7 +20,7 @@ int main() {
     VertexShader vs(angleY, scale, move, eyePos, fru);
 
     // 准备光栅化器。
-    Light light = {{-1,1,1}, {-10, 10, 10}, {150,200,250}};
+    Light light = {{-1,1,1}, {10, 10, 10}, {255,255,255}};
     Rasterizer r(light, eyePos);
     
     // 准备深度缓冲。
@@ -61,13 +61,13 @@ int main() {
         BeginBatchDraw();
 
         float startTime = omp_get_wtime();
-    #pragma omp parallel for
+    //#pragma omp parallel for
         for (int i = 0; i < model->nfaces(); ++i) {
             // 这个循环里遍历所有三角面。
             std::vector<int> face = model->face(i);
 
             // 装配三角形。
-            register Vertex vertex[3];
+            Vertex vertex[3];
             for (int j = 0; j < 3; ++j) {
                 Eigen::Vector3f tmpP = model->vert(face[j]);
                 vertex[j].pos = Eigen::Vector4f(tmpP[0], tmpP[1], tmpP[2], 1.f);
@@ -89,7 +89,7 @@ int main() {
         ++sumFrame;
         FlushBatchDraw();
     }
-    std::cout << "Rendered " << sumFrame << " frame with averge " << sumTime / sumFrame << " s" << std::endl;
+    std::cout << "Rendered " << sumFrame << " frames with averge " << sumTime / sumFrame << " s" << std::endl;
 
     return 0;
 }
