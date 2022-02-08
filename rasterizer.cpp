@@ -134,20 +134,27 @@ void Rasterizer::RasterizeTriangle_SL(Vertex *v, Model *model, float *z_bufer) {
                 Eigen::Vector3f halfDir = (viewDir + lightDir).normalized();
 
                 // 切线空间法线贴图。
-                Eigen::Matrix3f A;
-                Eigen::Vector3f tmp1 = v[1].viewPos - v[0].viewPos;
-                Eigen::Vector3f tmp2 = v[2].viewPos - v[0].viewPos;
-                A << tmp1[0], tmp1[1], tmp1[2],
-                    tmp2[0], tmp2[1], tmp2[2],
-                    normal[0], normal[1], normal[2];
-                Eigen::Matrix3f AI = A.inverse();
-                Eigen::Vector3f i = (AI * Eigen::Vector3f(v[1].uv[0] - v[0].uv[0], v[2].uv[0] - v[0].uv[0], 0)).normalized();
-                Eigen::Vector3f j = (AI * Eigen::Vector3f(v[1].uv[1] - v[0].uv[1], v[2].uv[1] - v[0].uv[1], 0)).normalized();
-                Eigen::Matrix3f B;
-                B << i[0], i[1], i[2],
-                    j[0], j[1], j[2],
-                    normal[0], normal[1], normal[2];
-                normal = (B * model->normalMap(uv)).normalized();
+                Eigen::Vector2f dUV1 = v[1].uv - v[0].uv;
+                Eigen::Vector2f dUV2 = v[2].uv - v[0].uv;
+                float u1 = dUV1[0];
+                float v1 = dUV1[1];
+                float u2 = dUV2[0];
+                float v2 = dUV2[1];
+                float inverse = 1.f / (u1 * v2 - u2 * v1);
+                Eigen::Vector3f e1 = v[1].viewPos - v[0].viewPos;
+                Eigen::Vector3f e2 = v[2].viewPos - v[0].viewPos;
+
+                Eigen::Vector3f T(v2 * e1[0] - v1 * e2[0], v2 * e1[1] - v1 * e2[1], v2 * e1[2] - v1 * e2[2]);
+                T *= inverse;
+                T.normalize();
+                Eigen::Vector3f B(u1 * e2[0] - u2 * e1[0], u1 * e2[1] - u2 * e1[1], u1 * e2[2] - u2 * e1[2]);
+                B *= inverse;
+                B.normalize();
+                Eigen::Matrix3f TBN;
+                TBN << T[0], B[0], normal[0],
+                    T[1], B[1], normal[1],
+                    T[2], B[2], normal[2];
+                normal = (TBN * model->normalMap(uv)).normalized();
 
                 // 漫反射项
                 // 去贴图中采样，然后将 rgb 作为 kd 使用。
@@ -159,12 +166,12 @@ void Rasterizer::RasterizeTriangle_SL(Vertex *v, Model *model, float *z_bufer) {
                 float ks = 0.3f;
                 // 去高光贴图中采样，作为计算 specular 项时的幂次方使用。 
                 float p = model->specular(uv);
-                float ls = pow(std::max(0.f, normal.dot(halfDir)), p);
+                float ls = std::pow(std::max(0.f, normal.dot(halfDir)), p);
 
                 // 环境光项
                 float ka = 0.02f;
 
-                Eigen::Vector3f inten;
+                float inten[3];
                 for (int k = 0; k < 3; ++k) {
                     inten[k] = std::clamp(kd[k] * ld + ks * ls + ka, 0.f, 1.f);
                 }
