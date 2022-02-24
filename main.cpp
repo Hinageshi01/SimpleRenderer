@@ -27,8 +27,8 @@ int main() {
     register float* z_buffer = new float[WIDTH * HEIGHT];
 
     ExMessage msg;
-    float sumTime = 0, sumFrame = 0;
     initgraph(WIDTH, HEIGHT);
+    float sumTime = 0.f, sumFrame = 0.f;
 
     // 主循环。
     while (true) {
