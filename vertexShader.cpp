@@ -65,7 +65,7 @@ void VertexShader::Transform(Vertex *vertex) {
     // mvp 矩阵。
     Eigen::Matrix4f mvp = projection * modelView;
     // mv 矩阵的逆的转置，用于处理顶点法向量。
-    Eigen::Matrix4f modelViewInvTran = modelView.inverse().transpose();
+    Eigen::Matrix4f modelViewInvTrans = modelView.inverse().transpose();
 
     for (int i = 0; i < 3; ++i) {
         // 给片元着色器提供用于计算光照的线性空间坐标。
@@ -82,11 +82,11 @@ void VertexShader::Transform(Vertex *vertex) {
         // 视口变换。
         p[0] = float(0.5f * WIDTH * (p[0] + 1.f));
         p[1] = float(0.5f * HEIGHT * (p[1] + 1.f));
-        //v[2] *= (fru.zFar - fru.zNear) / 2.f + (fru.zFar + fru.zNear) / 2.f;
+        //p[2] *= (fru.zFar - fru.zNear) / 2.f + (fru.zFar + fru.zNear) / 2.f;
 
         vertex[i].pos = p;
 
         // 法向量变换。
-        vertex[i].normal = modelViewInvTran * vertex[i].normal;
+        vertex[i].normal = modelViewInvTrans * vertex[i].normal;
     }
 }
