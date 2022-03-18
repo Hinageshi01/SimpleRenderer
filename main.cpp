@@ -90,6 +90,6 @@ int main() {
         FlushBatchDraw();
     }
     std::cout << "Rendered " << sumFrame << " frames with averge " << sumTime / sumFrame << " s" << std::endl;
-
+    std::cout << "FPS: " << sumFrame / sumTime << std::endl;
     return 0;
 }
