@@ -43,11 +43,13 @@ void Rasterizer::BHLine(const Eigen::Vector4f &point0, const Eigen::Vector4f &po
     }
 }
 
-Eigen::Vector3f Rasterizer::BarycentricCoor(const float &x, const float &y, const Vertex* v) {
-    float c1 = (x * (v[1].pos[1] - v[2].pos[1]) + (v[2].pos[0] - v[1].pos[0]) * y + v[1].pos[0] * v[2].pos[1] - v[2].pos[0] * v[1].pos[1]) / (v[0].pos[0] * (v[1].pos[1] - v[2].pos[1]) + (v[2].pos[0] - v[1].pos[0]) * v[0].pos[1] + v[1].pos[0] * v[2].pos[1] - v[2].pos[0] * v[1].pos[1]);
-    float c2 = (x * (v[2].pos[1] - v[0].pos[1]) + (v[0].pos[0] - v[2].pos[0]) * y + v[2].pos[0] * v[0].pos[1] - v[0].pos[0] * v[2].pos[1]) / (v[1].pos[0] * (v[2].pos[1] - v[0].pos[1]) + (v[0].pos[0] - v[2].pos[0]) * v[1].pos[1] + v[2].pos[0] * v[0].pos[1] - v[0].pos[0] * v[2].pos[1]);
-    float c3 = (x * (v[0].pos[1] - v[1].pos[1]) + (v[1].pos[0] - v[0].pos[0]) * y + v[0].pos[0] * v[1].pos[1] - v[1].pos[0] * v[0].pos[1]) / (v[2].pos[0] * (v[0].pos[1] - v[1].pos[1]) + (v[1].pos[0] - v[0].pos[0]) * v[2].pos[1] + v[0].pos[0] * v[1].pos[1] - v[1].pos[0] * v[0].pos[1]);
-    return { c1, c2, c3 };
+Eigen::Vector3f Rasterizer::BarycentricCoor(const float &x, const float &y, const Vertex *v) {
+    float squareDiv = 1.f / (v[0].pos[0] * (v[1].pos[1] - v[2].pos[1]) + (v[2].pos[0] - v[1].pos[0]) * v[0].pos[1] + v[1].pos[0] * v[2].pos[1] - v[2].pos[0] * v[1].pos[1]);
+    float c1 = (x * (v[1].pos[1] - v[2].pos[1]) + (v[2].pos[0] - v[1].pos[0]) * y + v[1].pos[0] * v[2].pos[1] - v[2].pos[0] * v[1].pos[1]) * squareDiv;
+    float c2 = (x * (v[2].pos[1] - v[0].pos[1]) + (v[0].pos[0] - v[2].pos[0]) * y + v[2].pos[0] * v[0].pos[1] - v[0].pos[0] * v[2].pos[1]) * squareDiv;
+    //float c3 = (x * (v[0].pos[1] - v[1].pos[1]) + (v[1].pos[0] - v[0].pos[0]) * y + v[0].pos[0] * v[1].pos[1] - v[1].pos[0] * v[0].pos[1]) /
+    //    (v[2].pos[0] * (v[0].pos[1] - v[1].pos[1]) + (v[1].pos[0] - v[0].pos[0]) * v[2].pos[1] + v[0].pos[0] * v[1].pos[1] - v[1].pos[0] * v[0].pos[1]);
+    return { c1, c2, (1 - c1 - c2) };
 }
 
 template <typename T>
@@ -116,69 +118,69 @@ void Rasterizer::RasterizeTriangle_SL(Vertex *v, Model *model, float *z_bufer) {
             a *= div;
             b *= div;
             c *= div;
+
             float z = Interpolate(a, b, c, v[0].pos[2], v[1].pos[2], v[2].pos[2]);
-
-            int index = x + y * WIDTH;
-            if (z <= z_bufer[index]) {
-                z_bufer[index] = z;
-                
-                // 重心坐标插值。
-                Eigen::Vector3f viewPos = Interpolate(a, b, c, v[0].viewPos, v[1].viewPos, v[2].viewPos);
-                Eigen::Vector4f tmpN = Interpolate(a, b, c, v[0].normal, v[1].normal, v[2].normal);
-                Eigen::Vector2f uv = Interpolate(a, b, c, v[0].uv, v[1].uv, v[2].uv);
-
-                // 重要的几个向量，均以着色点为出发点。
-                Eigen::Vector3f normal = tmpN.head<3>().normalized();
-                Eigen::Vector3f viewDir = (eyePos - viewPos).normalized();
-                Eigen::Vector3f lightDir = (light.position - viewPos).normalized();
-                Eigen::Vector3f halfDir = (viewDir + lightDir).normalized();
-
-                // 切线空间法线贴图。
-                Eigen::Vector2f dUV1 = v[1].uv - v[0].uv;
-                Eigen::Vector2f dUV2 = v[2].uv - v[0].uv;
-                float u1 = dUV1[0];
-                float v1 = dUV1[1];
-                float u2 = dUV2[0];
-                float v2 = dUV2[1];
-                float inverse = 1.f / (u1 * v2 - u2 * v1);
-                Eigen::Vector3f e1 = v[1].viewPos - v[0].viewPos;
-                Eigen::Vector3f e2 = v[2].viewPos - v[0].viewPos;
-
-                Eigen::Vector3f T(v2 * e1[0] - v1 * e2[0], v2 * e1[1] - v1 * e2[1], v2 * e1[2] - v1 * e2[2]);
-                T *= inverse;
-                T.normalize();
-                Eigen::Vector3f B(u1 * e2[0] - u2 * e1[0], u1 * e2[1] - u2 * e1[1], u1 * e2[2] - u2 * e1[2]);
-                B *= inverse;
-                B.normalize();
-                Eigen::Matrix3f TBN;
-                TBN << T[0], B[0], normal[0],
-                    T[1], B[1], normal[1],
-                    T[2], B[2], normal[2];
-                normal = (TBN * model->normalMap(uv)).normalized();
-
-                // 漫反射项
-                // 去贴图中采样，然后将 rgb 作为 kd 使用。
-                unsigned char* bgra = model->diffuse(uv).bgra;
-                Eigen::Vector3f kd = Eigen::Vector3f(bgra[2], bgra[1], bgra[0]) / 255.f;
-                float ld = std::max(0.f, normal.dot(lightDir));
-
-                // 高光项
-                float ks = 0.3f;
-                // 去高光贴图中采样，作为计算 specular 项时的幂次方使用。 
-                float p = model->specular(uv);
-                float ls = std::pow(std::max(0.f, normal.dot(halfDir)), p);
-
-                // 环境光项
-                float ka = 0.02f;
-
-                float inten[3];
-                for (int k = 0; k < 3; ++k) {
-                    inten[k] = std::clamp(kd[k] * ld + ks * ls + ka, 0.f, 1.f);
-                }
-                COLORREF color = RGB(inten[0] * 255, inten[1] * 255, inten[2] * 255);
-                
-                putpixel(x, y, color);
+            const int index = x + y * WIDTH;
+            if (z > z_bufer[index]) {
+                continue;
             }
+            z_bufer[index] = z;
+
+            // 重心坐标插值。
+            Eigen::Vector3f viewPos = Interpolate(a, b, c, v[0].viewPos, v[1].viewPos, v[2].viewPos);
+            Eigen::Vector4f tmpN = Interpolate(a, b, c, v[0].normal, v[1].normal, v[2].normal);
+            Eigen::Vector2f uv = Interpolate(a, b, c, v[0].uv, v[1].uv, v[2].uv);
+
+            // 重要的几个向量，均以着色点为出发点。
+            Eigen::Vector3f normal = tmpN.head<3>().normalized();
+            Eigen::Vector3f viewDir = (eyePos - viewPos).normalized();
+            Eigen::Vector3f lightDir = (light.position - viewPos).normalized();
+            Eigen::Vector3f halfDir = (viewDir + lightDir).normalized();
+
+            // 切线空间法线贴图。
+            Eigen::Vector2f dUV1 = v[1].uv - v[0].uv;
+            Eigen::Vector2f dUV2 = v[2].uv - v[0].uv;
+            float u1 = dUV1[0];
+            float v1 = dUV1[1];
+            float u2 = dUV2[0];
+            float v2 = dUV2[1];
+            float inverse = 1.f / (u1 * v2 - u2 * v1);
+            Eigen::Vector3f e1 = v[1].viewPos - v[0].viewPos;
+            Eigen::Vector3f e2 = v[2].viewPos - v[0].viewPos;
+
+            Eigen::Vector3f T(v2 * e1[0] - v1 * e2[0], v2 * e1[1] - v1 * e2[1], v2 * e1[2] - v1 * e2[2]);
+            T *= inverse;
+            T.normalize();
+            Eigen::Vector3f B(u1 * e2[0] - u2 * e1[0], u1 * e2[1] - u2 * e1[1], u1 * e2[2] - u2 * e1[2]);
+            B *= inverse;
+            B.normalize();
+            Eigen::Matrix3f TBN;
+            TBN << T[0], B[0], normal[0],
+                T[1], B[1], normal[1],
+                T[2], B[2], normal[2];
+            normal = (TBN * model->normalMap(uv)).normalized();
+
+            // 漫反射项
+            // 去贴图中采样，然后将 rgb 作为 kd 使用。
+            unsigned char *bgra = model->diffuse(uv).bgra;
+            Eigen::Vector3f kd = Eigen::Vector3f(bgra[2], bgra[1], bgra[0]) / 255.f;
+            float ld = std::max(0.f, normal.dot(lightDir));
+
+            // 高光项
+            float ks = 0.3f;
+            // 去高光贴图中采样，作为计算 specular 项时的幂次方使用。 
+            float p = model->specular(uv);
+            float ls = std::pow(std::max(0.f, normal.dot(halfDir)), p);
+
+            // 环境光项
+            float ka = 0.02f;
+
+            float intenR = std::clamp(kd[0] * ld + ks * ls + ka, 0.f, 1.f);
+            float intenG = std::clamp(kd[1] * ld + ks * ls + ka, 0.f, 1.f);
+            float intenB = std::clamp(kd[2] * ld + ks * ls + ka, 0.f, 1.f);
+            COLORREF color = RGB(intenR * 255, intenG * 255, intenB * 255);
+
+            putpixel(x, y, color);
         }
     }
 }
