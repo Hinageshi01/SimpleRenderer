@@ -1,22 +1,11 @@
 #pragma once
 
 #include <iostream>
-#include <algorithm>
-#include <graphics.h>
-#include <conio.h>
-#include <omp.h>
-#include <vector>
-#include <string>
-#include <fstream>
-#include <sstream>
-#include <string.h>
-#include <time.h>
-#include <math.h>
 #include <eigen3/Eigen/Eigen>
 
-const double MY_PI = acos(-1);
-const int WIDTH = 600;
-const int HEIGHT = 600;
+const float MY_PI = acos(-1);
+const int WIDTH = 512;
+const int HEIGHT = 512;
 
 struct Light
 {
