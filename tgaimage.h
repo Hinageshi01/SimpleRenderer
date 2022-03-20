@@ -1,5 +1,8 @@
 #pragma once
 
+#include <fstream>
+#include <sstream>
+
 #include "global.h"
 
 #pragma pack(push,1)

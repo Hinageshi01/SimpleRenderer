@@ -1,7 +1,9 @@
 #pragma once
 
+#include <graphics.h>
+
 #include "model.h"
-#include "vertex.h"
+#include "vertexShader.h"
 
 class Rasterizer
 {
@@ -11,7 +13,7 @@ public:
 	// Bresenham 算法画直线。
 	void BHLine(const Eigen::Vector4f &point0, const Eigen::Vector4f &point1);
 	// 返回重心坐标 a、b、c 三个值，与向量无关。 
-	inline Eigen::Vector3f BarycentricCoor(const float &x, const float &y, const Vertex* v);
+	inline Eigen::Vector3f BarycentricCoor(const float &x, const float &y, const Vertex &v0, const Vertex &v1, const Vertex &v2);
 	// 通过重心坐标计算三角形内一点的插值。
 	template <typename T>
 		inline T Interpolate(const float &a, const float &b, const float &c, const T &v1, const T &v3, const T &v2);
