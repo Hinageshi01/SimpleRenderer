@@ -1,17 +1,19 @@
-﻿#include "rasterizer.h"
+﻿#include <omp.h>
+
+#include "rasterizer.h"
 #include "vertexShader.h"
 
 #undef max
 #undef min
 
 int main() {
-    // 准备模型数据。
+    // 准备模型数据
     Model* model = nullptr;
     model = new Model("obj/african_head/african_head.obj");
     //model = new Model("obj/boggie/body.obj");
     //model = new Model("obj/diablo3_pose/diablo3_pose.obj");
 
-    // 准备顶点着色器。
+    // 准备顶点着色器
     float angleY = 15.f;
     float scale = 3.5f;
     Eigen::Vector3f move = {0,0.1f,0};
@@ -19,76 +21,80 @@ int main() {
     Frustum fru = {45.f, WIDTH / (float)HEIGHT, 0.1f, 50.f};
     VertexShader vs(angleY, scale, move, eyePos, fru);
 
-    // 准备光栅化器。
+    // 准备光栅化器
     Light light = {{-1,1,1}, {10, 10, 10}, {255,255,255}};
     Rasterizer r(light, eyePos);
     
-    // 准备深度缓冲。
-    register float* z_buffer = new float[WIDTH * HEIGHT];
+    // 准备深度缓冲
+    float* z_buffer = new float[WIDTH * HEIGHT];
 
-    ExMessage msg;
     initgraph(WIDTH, HEIGHT);
-    float sumTime = 0.f, sumFrame = 0.f;
 
     // 主循环。
+    unsigned int sumFrame = 0;
+    float startTime = omp_get_wtime();
     while (true) {
-        // 处理键盘输入。
+        // 处理键盘输入
         flushmessage();
-        msg = getmessage(EM_KEY);
-        if (msg.vkcode == VK_ESCAPE || msg.vkcode == VK_RETURN) {
+        unsigned int code = getmessage(EM_KEY).vkcode;
+        if (code == VK_ESCAPE || code == VK_RETURN) {
+            // 循环出口
             closegraph();
             break;
         }
-        switch (msg.vkcode) {
-            case 0x41:
-                angleY += 5.f;
+        switch (code) {
+            case 0x41: // A
+                angleY += 4.f;
                 break;
-            case 0x44:
-                angleY -= 5.f;
+            case 0x44: // D
+                angleY -= 4.f;
                 break;
-            case 0x53:
-                scale -= 0.3f;
+            case 0x53: // S
+                scale -= 0.2f;
                 break;
-            case 0x57:
-                scale += 0.3f;
+            case 0x57: // W
+                scale += 0.2f;
                 break;
         }
+        scale = std::max(0.01f, scale);
         vs.Update(angleY, scale);
 
-        memset(z_buffer, std::numeric_limits<float>::max(), WIDTH * HEIGHT * sizeof(float));
+        // 重置深度缓冲
+        for (int i = 0; i < WIDTH * HEIGHT; ++i) {
+            z_buffer[i] = std::numeric_limits<float>::max();
+        }
         
         cleardevice();
         BeginBatchDraw();
 
-        float startTime = omp_get_wtime();
+        const int NUM_FACES = model->nfaces();
     //#pragma omp parallel for
-        for (int i = 0; i < model->nfaces(); ++i) {
-            // 这个循环里遍历所有三角面。
-            std::vector<int> face = model->face(i);
+        for (int i = 0; i < NUM_FACES; ++i) {
+            // 这个循环里遍历所有三角面，i 与 j 代表了第 i 个三角形的第 j 个顶点
 
-            // 装配三角形。
-            Vertex vertex[3];
+            // 装配三角形
+            Vertex vertexes[3];
             for (int j = 0; j < 3; ++j) {
-                Eigen::Vector3f tmpP = model->vert(face[j]);
-                vertex[j].pos = Eigen::Vector4f(tmpP[0], tmpP[1], tmpP[2], 1.f);
+                Eigen::Vector3f tmpP = model->vert(i, j);
+                vertexes[j].pos = Eigen::Vector4f(tmpP[0], tmpP[1], tmpP[2], 1.f);
 
                 Eigen::Vector3f tmpN = model->normal(i, j);
-                vertex[j].normal = Eigen::Vector4f(tmpN[0], tmpN[1], tmpN[2], 0.f);
+                vertexes[j].normal = Eigen::Vector4f(tmpN[0], tmpN[1], tmpN[2], 0.f);
 
-                vertex[j].uv = model->uv(i, j);
+                vertexes[j].uv = model->uv(i, j);
             }
 
-            // 顶点着色器。
-            vs.Transform(vertex);
+            // 顶点着色器
+            vs.Transform(vertexes);
 
-            // 光栅化器与片元着色器。
-            r.RasterizeTriangle_SL(vertex, model, z_buffer);
+            // 光栅化器与片元着色器
+            r.RasterizeTriangle_SL(vertexes, model, z_buffer);
         }
-        float endTime = omp_get_wtime();
-        sumTime += (endTime - startTime);
         ++sumFrame;
         FlushBatchDraw();
     }
+
+    float sumTime = omp_get_wtime() - startTime;
     std::cout << "Rendered " << sumFrame << " frames with averge " << sumTime / sumFrame << " s" << std::endl;
     std::cout << "FPS: " << sumFrame / sumTime << std::endl;
     return 0;
