@@ -48,8 +48,6 @@ Eigen::Vector3f Rasterizer::BarycentricCoor(const float &x, const float &y, cons
         (v0.pos[0] * (v1.pos[1] - v2.pos[1]) + (v2.pos[0] - v1.pos[0]) * v0.pos[1] + v1.pos[0] * v2.pos[1] - v2.pos[0] * v1.pos[1]);
     float c1 = (x * (v1.pos[1] - v2.pos[1]) + (v2.pos[0] - v1.pos[0]) * y + v1.pos[0] * v2.pos[1] - v2.pos[0] * v1.pos[1]) * squareDiv;
     float c2 = (x * (v2.pos[1] - v0.pos[1]) + (v0.pos[0] - v2.pos[0]) * y + v2.pos[0] * v0.pos[1] - v0.pos[0] * v2.pos[1]) * squareDiv;
-    //float c3 = (x * (v0.pos[1] - v1.pos[1]) + (v1.pos[0] - v0.pos[0]) * y + v0.pos[0] * v1.pos[1] - v1.pos[0] * v0.pos[1]) /
-    //    (v2.pos[0] * (v0.pos[1] - v1.pos[1]) + (v1.pos[0] - v0.pos[0]) * v2.pos[1] + v0.pos[0] * v1.pos[1] - v1.pos[0] * v0.pos[1]);
     return { c1, c2, (1.f - c1 - c2) };
 }
 
@@ -58,7 +56,7 @@ T Rasterizer::Interpolate(const float &a, const float &b, const float &c, const 
     return a * v1 + b * v2 + c * v3;
 }
 
-void Rasterizer::RasterizeTriangle_SL(Vertex *v, Model *model, float *z_bufer) {
+void Rasterizer::RasterizeTriangle_SL(Vertex *v, Model *model, float *z_buffer) {
     Vertex v0 = v[0];
     Vertex v1 = v[1];
     Vertex v2 = v[2];
@@ -126,10 +124,10 @@ void Rasterizer::RasterizeTriangle_SL(Vertex *v, Model *model, float *z_bufer) {
 
             float z = Interpolate(a, b, c, v0.pos[2], v1.pos[2], v2.pos[2]);
             const int index = x + y * WIDTH;
-            if (z > z_bufer[index]) {
+            if (z > z_buffer[index]) {
                 continue;
             }
-            z_bufer[index] = z;
+            z_buffer[index] = z;
 
             // 重心坐标插值
             Eigen::Vector3f viewPos = Interpolate(a, b, c, v0.viewPos, v1.viewPos, v2.viewPos);
@@ -179,10 +177,12 @@ void Rasterizer::RasterizeTriangle_SL(Vertex *v, Model *model, float *z_bufer) {
             // 环境光项
             float ka = 0.02f;
 
-            float intenR = std::clamp(kd[0] * ld + ks * ls + ka, 0.f, 1.f);
-            float intenG = std::clamp(kd[1] * ld + ks * ls + ka, 0.f, 1.f);
-            float intenB = std::clamp(kd[2] * ld + ks * ls + ka, 0.f, 1.f);
-            COLORREF color = RGB(intenR * 255.f, intenG * 255.f, intenB * 255.f);
+            float inten[3];
+#pragma unroll 3
+            for (int k = 0; k < 3; ++k) {
+                inten[k] = std::clamp(kd[k] * ld + ks * ls + ka, 0.f, 1.f);
+            }
+            COLORREF color = RGB(inten[0] * 255.f, inten[1] * 255.f, inten[2] * 255.f);
 
             putpixel(x, y, color);
         }

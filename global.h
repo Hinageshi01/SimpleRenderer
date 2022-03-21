@@ -3,9 +3,10 @@
 #include <iostream>
 #include <eigen3/Eigen/Eigen>
 
-const float MY_PI = acos(-1);
-const int WIDTH = 512;
-const int HEIGHT = 512;
+constexpr float MY_PI = 3.1415926535897932384626433832795;
+constexpr int WIDTH = 512;
+constexpr int HEIGHT = 512;
+constexpr float Z_MAX = FLT_MAX;
 
 struct Light
 {

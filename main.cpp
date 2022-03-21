@@ -1,4 +1,4 @@
-﻿#include <omp.h>
+﻿#include <chrono>
 
 #include "rasterizer.h"
 #include "vertexShader.h"
@@ -6,9 +6,11 @@
 #undef max
 #undef min
 
+float z_buffer[WIDTH * HEIGHT];
+
 int main() {
     // 准备模型数据
-    Model* model = nullptr;
+    Model *model = nullptr;
     model = new Model("obj/african_head/african_head.obj");
     //model = new Model("obj/boggie/body.obj");
     //model = new Model("obj/diablo3_pose/diablo3_pose.obj");
@@ -16,27 +18,26 @@ int main() {
     // 准备顶点着色器
     float angleY = 15.f;
     float scale = 3.5f;
-    Eigen::Vector3f move = {0,0.1f,0};
-    Eigen::Vector3f eyePos = {0,0,10};
+    Eigen::Vector3f move(0, 0.1f, 0);
+    Eigen::Vector3f eyePos(0, 0, 10);
     Frustum fru = {45.f, WIDTH / (float)HEIGHT, 0.1f, 50.f};
     VertexShader vs(angleY, scale, move, eyePos, fru);
 
     // 准备光栅化器
     Light light = {{-1,1,1}, {10, 10, 10}, {255,255,255}};
     Rasterizer r(light, eyePos);
-    
-    // 准备深度缓冲
-    float* z_buffer = new float[WIDTH * HEIGHT];
 
     initgraph(WIDTH, HEIGHT);
 
+    getmessage(EM_KEY);
+
     // 主循环。
-    unsigned int sumFrame = 0;
-    float startTime = omp_get_wtime();
+    int sumFrame = 0;
+    auto startTime = std::chrono::high_resolution_clock::now();
     while (true) {
         // 处理键盘输入
         flushmessage();
-        unsigned int code = getmessage(EM_KEY).vkcode;
+        auto code = getmessage(EM_KEY).vkcode;
         if (code == VK_ESCAPE || code == VK_RETURN) {
             // 循环出口
             closegraph();
@@ -61,19 +62,19 @@ int main() {
 
         // 重置深度缓冲
         for (int i = 0; i < WIDTH * HEIGHT; ++i) {
-            z_buffer[i] = std::numeric_limits<float>::max();
+            _mm_stream_si32((int *)&z_buffer[i], *(int *)&Z_MAX);
         }
         
         cleardevice();
         BeginBatchDraw();
 
         const int NUM_FACES = model->nfaces();
-    //#pragma omp parallel for
         for (int i = 0; i < NUM_FACES; ++i) {
             // 这个循环里遍历所有三角面，i 与 j 代表了第 i 个三角形的第 j 个顶点
 
             // 装配三角形
             Vertex vertexes[3];
+#pragma unroll 3
             for (int j = 0; j < 3; ++j) {
                 Eigen::Vector3f tmpP = model->vert(i, j);
                 vertexes[j].pos = Eigen::Vector4f(tmpP[0], tmpP[1], tmpP[2], 1.f);
@@ -93,8 +94,10 @@ int main() {
         ++sumFrame;
         FlushBatchDraw();
     }
+    auto endTime = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<float> duration = endTime - startTime;
+    float sumTime = duration.count();
 
-    float sumTime = omp_get_wtime() - startTime;
     std::cout << "Rendered " << sumFrame << " frames with averge " << sumTime / sumFrame << " s" << std::endl;
     std::cout << "FPS: " << sumFrame / sumTime << std::endl;
     return 0;
