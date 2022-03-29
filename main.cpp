@@ -6,8 +6,6 @@
 #undef max
 #undef min
 
-float z_buffer[WIDTH * HEIGHT];
-
 int main() {
     // 准备模型数据
     Model *model = nullptr;
@@ -26,6 +24,9 @@ int main() {
     // 准备光栅化器
     Light light = {{-1,1,1}, {10, 10, 10}, {255,255,255}};
     Rasterizer r(light, eyePos);
+
+    // 准备深度缓冲
+    float *z_buffer = (float *)_mm_malloc(WIDTH * HEIGHT * sizeof(float), 4096);
 
     initgraph(WIDTH, HEIGHT);
 
