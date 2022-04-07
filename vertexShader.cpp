@@ -40,7 +40,7 @@ void VertexShader::Update(const float &a, const float &s) {
     scale = s;
 }
 
-Eigen::Matrix4f VertexShader::GetModelMatrix() {
+Eigen::Matrix4f VertexShader::GetModelMatrix() const {
     Eigen::Matrix4f Mrotation;
     float radian = angleY * MY_PI / 180.f;
     Mrotation << cos(radian), 0, sin(radian), 0,
@@ -57,7 +57,7 @@ Eigen::Matrix4f VertexShader::GetModelMatrix() {
     return Mmove * Mscale * Mrotation;
 }
 
-void VertexShader::Transform(Vertex *vertex) {
+void VertexShader::Transform(Vertex *vertex) const {
     Eigen::Matrix4f model = GetModelMatrix();
 
     // 用于保留 viewSpace 坐标系
@@ -67,22 +67,23 @@ void VertexShader::Transform(Vertex *vertex) {
     // mv 矩阵的逆的转置，用于处理顶点法向量
     Eigen::Matrix4f modelViewInvTrans = modelView.inverse().transpose();
 
+#pragma unroll 3
     for (int i = 0; i < 3; ++i) {
         // 给片元着色器提供用于计算光照的线性空间坐标
         vertex[i].viewPos = (modelView * vertex[i].pos).head<3>();
 
         Eigen::Vector4f p = mvp * vertex[i].pos;
 
-        // 归一化至 NDC 坐标系
+        // 齐次除法
         p[3] = 1.f / p[3];
         p[0] *= p[3];
         p[1] *= p[3];
         p[2] *= p[3];
 
         // 视口变换
-        p[0] = float(0.5f * WIDTH * (p[0] + 1.f));
-        p[1] = float(0.5f * HEIGHT * (p[1] + 1.f));
-        //p[2] *= (fru.zFar - fru.zNear) / 2.f + (fru.zFar + fru.zNear) / 2.f;
+        p[0] = 0.5f * WIDTH * (p[0] + 1.f);
+        p[1] = 0.5f * HEIGHT * (p[1] + 1.f);
+        //p[2] = (1.f / p[2] - 1.f / 0.1f) / (1.f / 50.f - 1.f / 0.1f);
 
         vertex[i].pos = p;
 

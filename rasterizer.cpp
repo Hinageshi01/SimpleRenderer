@@ -5,7 +5,7 @@
 
 Rasterizer::Rasterizer(const Light &l, const Eigen::Vector3f &e) : light(l), eyePos(e) { }
 
-void Rasterizer::BHLine(const Eigen::Vector4f &point0, const Eigen::Vector4f &point1) {
+void Rasterizer::BHLine(const Eigen::Vector4f &point0, const Eigen::Vector4f &point1) const  {
     Eigen::Vector4f p0 = point0;
     Eigen::Vector4f p1 = point1;
 
@@ -43,7 +43,7 @@ void Rasterizer::BHLine(const Eigen::Vector4f &point0, const Eigen::Vector4f &po
     }
 }
 
-Eigen::Vector3f Rasterizer::BarycentricCoor(const float &x, const float &y, const Vertex &v0, const Vertex &v1, const Vertex &v2) {
+Eigen::Vector3f Rasterizer::GetBarycentricCoor(const float &x, const float &y, const Vertex &v0, const Vertex &v1, const Vertex &v2) const {
     float squareDiv = 1.f /
         (v0.pos[0] * (v1.pos[1] - v2.pos[1]) + (v2.pos[0] - v1.pos[0]) * v0.pos[1] + v1.pos[0] * v2.pos[1] - v2.pos[0] * v1.pos[1]);
     float c1 = (x * (v1.pos[1] - v2.pos[1]) + (v2.pos[0] - v1.pos[0]) * y + v1.pos[0] * v2.pos[1] - v2.pos[0] * v1.pos[1]) * squareDiv;
@@ -52,11 +52,11 @@ Eigen::Vector3f Rasterizer::BarycentricCoor(const float &x, const float &y, cons
 }
 
 template <typename T>
-T Rasterizer::Interpolate(const float &a, const float &b, const float &c, const T &v1, const T &v2, const T &v3) {
-    return a * v1 + b * v2 + c * v3;
+T Rasterizer::Interpolate(const Eigen::Vector3f bc, const T &v1, const T &v2, const T &v3) const {
+    return bc[0] * v1 + bc[1] * v2 + bc[2] * v3;
 }
 
-void Rasterizer::RasterizeTriangle_SL(Vertex *v, Model *model, float *z_buffer) {
+void Rasterizer::RasterizeTriangle_SL(Vertex *v, Model *model, float *z_buffer) const  {
     Vertex v0 = v[0];
     Vertex v1 = v[1];
     Vertex v2 = v[2];
@@ -112,17 +112,15 @@ void Rasterizer::RasterizeTriangle_SL(Vertex *v, Model *model, float *z_buffer) 
             }
 
             // 计算重心坐标以及透视矫正插值，先将深度插值出来，直接跳过被深度测试剔除的片元
-            Eigen::Vector3f tmpBC = BarycentricCoor(x + 0.5f, y + 0.5f, v0, v1, v2);
+            Eigen::Vector3f tmpBC = GetBarycentricCoor(x + 0.5f, y + 0.5f, v0, v1, v2);
             // pos[3] 存储的是 ViewSpace 中的 1/z
-            float a = tmpBC[0] * v0.pos[3];
-            float b = tmpBC[1] * v1.pos[3];
-            float c = tmpBC[2] * v2.pos[3];
-            float divBC = 1.f / (a + b + c);
-            a *= divBC;
-            b *= divBC;
-            c *= divBC;
+            Eigen::Vector3f baryCoor;
+            baryCoor[0] = tmpBC[0] * v0.pos[3];
+            baryCoor[1] = tmpBC[1] * v1.pos[3];
+            baryCoor[2] = tmpBC[2] * v2.pos[3];
+            baryCoor /= (baryCoor[0] + baryCoor[1] + baryCoor[2]);
 
-            float z = Interpolate(a, b, c, v0.pos[2], v1.pos[2], v2.pos[2]);
+            float z = Interpolate(baryCoor, v0.pos[2], v1.pos[2], v2.pos[2]);
             const int index = x + y * WIDTH;
             if (z > z_buffer[index]) {
                 continue;
@@ -130,9 +128,9 @@ void Rasterizer::RasterizeTriangle_SL(Vertex *v, Model *model, float *z_buffer) 
             z_buffer[index] = z;
 
             // 重心坐标插值
-            Eigen::Vector3f viewPos = Interpolate(a, b, c, v0.viewPos, v1.viewPos, v2.viewPos);
-            Eigen::Vector4f tmpN = Interpolate(a, b, c, v0.normal, v1.normal, v2.normal);
-            Eigen::Vector2f uv = Interpolate(a, b, c, v0.uv, v1.uv, v2.uv);
+            Eigen::Vector3f viewPos = Interpolate(baryCoor, v0.viewPos, v1.viewPos, v2.viewPos);
+            Eigen::Vector4f tmpN = Interpolate(baryCoor, v0.normal, v1.normal, v2.normal);
+            Eigen::Vector2f uv = Interpolate(baryCoor, v0.uv, v1.uv, v2.uv);
 
             // 重要的几个向量，均以着色点为出发点
             Eigen::Vector3f normal = tmpN.head(3).normalized();
@@ -189,6 +187,6 @@ void Rasterizer::RasterizeTriangle_SL(Vertex *v, Model *model, float *z_buffer) 
     }
 }
 
-void Rasterizer::WorldToScreen(Eigen::Vector4f &v) {
-    v = Eigen::Vector4f(int((v[0] + 1.) * WIDTH / 2. + 0.5), HEIGHT - int((v[1] + 1.) * HEIGHT / 2. + 0.5), v[2], 1.f);
+void Rasterizer::WorldToScreen(Eigen::Vector4f &v) const {
+    v = Eigen::Vector4f(int((v[0] + 1.f) * WIDTH / 2.f + 0.5f), HEIGHT - int((v[1] + 1.f) * HEIGHT / 2.f + 0.5f), v[2], 1.f);
 }
