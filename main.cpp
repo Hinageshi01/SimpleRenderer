@@ -1,4 +1,5 @@
-﻿#include <chrono>
+﻿#include <iostream>
+#include <chrono>
 
 #include "rasterizer.h"
 #include "vertexShader.h"
