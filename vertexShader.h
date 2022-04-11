@@ -1,19 +1,27 @@
 #pragma once
 
+#include <eigen3/Eigen/Eigen>
+
 #include "global.h"
 
 #undef near
 #undef far
 
-class Vertex
+struct Vertex
 {
-public:
 	Eigen::Vector4f pos;
 	Eigen::Vector4f normal;
 	Eigen::Vector2f uv;
-
 	// viewSpace 坐标系下的顶点坐标。
 	Eigen::Vector3f viewPos;
+};
+
+struct Frustum
+{
+	float fov;
+	float aspect;
+	float zNear;
+	float zFar;
 };
 
 class VertexShader
@@ -23,12 +31,12 @@ public:
 
 	// 在主循环中被调用，随着键盘输入更新模型的位置信息。
 	void Update(const float &a, const float &s);
-	// 计算 model 矩阵。
-	inline Eigen::Matrix4f GetModelMatrix() const;
 	// 变换至屏幕空间坐标系。
 	void Transform(Vertex *v) const;
-
 private:
+	// 计算 model 矩阵。
+	Eigen::Matrix4f GetModelMatrix() const;
+
 	// model 矩阵所需要的数据。
 	float angleY;
 	float scale;

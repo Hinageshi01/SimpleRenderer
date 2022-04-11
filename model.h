@@ -3,7 +3,8 @@
 #include <iostream>
 #include <vector>
 
-#include "global.h"
+#include <eigen3/Eigen/Eigen>
+
 #include "tgaimage.h"
 
 class Model

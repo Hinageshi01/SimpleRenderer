@@ -51,10 +51,10 @@ Eigen::Vector3f Rasterizer::GetBarycentricCoor(const float &x, const float &y, c
     return { c1, c2, (1.f - c1 - c2) };
 }
 
-template <typename T>
-T Rasterizer::Interpolate(const Eigen::Vector3f bc, const T &v1, const T &v2, const T &v3) const {
-    return bc[0] * v1 + bc[1] * v2 + bc[2] * v3;
-}
+//template <typename T>
+//T Rasterizer::Interpolate(const Eigen::Vector3f bc, const T &v1, const T &v2, const T &v3) const {
+//    return bc[0] * v1 + bc[1] * v2 + bc[2] * v3;
+//}
 
 void Rasterizer::RasterizeTriangle_SL(Vertex *v, Model *model, float *z_buffer) const  {
     Vertex v0 = v[0];
