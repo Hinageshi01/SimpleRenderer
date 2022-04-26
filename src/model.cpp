@@ -1,4 +1,4 @@
-#include "model.h"
+#include "inc/model.h"
 
 Model::Model(const char *filename) : verts_(), faces_(), norms_(), uv_(), diffusemap_(), normalmap_(), specularmap_() {
     std::ifstream in;

@@ -18,6 +18,20 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\model.cpp" />
+    <ClCompile Include="src\rasterizer.cpp" />
+    <ClCompile Include="src\tgaimage.cpp" />
+    <ClCompile Include="src\vertexShader.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="inc\global.h" />
+    <ClInclude Include="inc\model.h" />
+    <ClInclude Include="inc\rasterizer.h" />
+    <ClInclude Include="inc\tgaimage.h" />
+    <ClInclude Include="inc\vertexShader.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
@@ -147,6 +161,7 @@
       <OpenMPSupport>true</OpenMPSupport>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <Optimization>MaxSpeed</Optimization>
+      <AdditionalIncludeDirectories>C:\Works\SimpleRenderer;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -155,20 +170,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="model.cpp" />
-    <ClCompile Include="rasterizer.cpp" />
-    <ClCompile Include="tgaimage.cpp" />
-    <ClCompile Include="vertexShader.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="global.h" />
-    <ClInclude Include="model.h" />
-    <ClInclude Include="rasterizer.h" />
-    <ClInclude Include="tgaimage.h" />
-    <ClInclude Include="vertexShader.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

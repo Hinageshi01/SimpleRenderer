@@ -15,36 +15,36 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="src\main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="model.cpp">
+    <ClCompile Include="src\model.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="tgaimage.cpp">
+    <ClCompile Include="src\rasterizer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="rasterizer.cpp">
+    <ClCompile Include="src\tgaimage.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="vertexShader.cpp">
+    <ClCompile Include="src\vertexShader.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="model.h">
+    <ClInclude Include="inc\global.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="tgaimage.h">
+    <ClInclude Include="inc\model.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="rasterizer.h">
+    <ClInclude Include="inc\rasterizer.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="vertexShader.h">
+    <ClInclude Include="inc\tgaimage.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="global.h">
+    <ClInclude Include="inc\vertexShader.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
