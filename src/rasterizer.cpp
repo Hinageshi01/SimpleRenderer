@@ -85,9 +85,8 @@ void Rasterizer::RasterizeTriangle_SL(const Vertex const *vertex, Model *model, 
     v0.pos[1] = std::floor(v0.pos[1]);
     v2.pos[1] = std::ceil(v2.pos[1]);
 
-    float &left = const_cast<float &>(std::min(v0.pos[0], std::min(v1.pos[0], v2.pos[0])));
-    float &right = const_cast<float &>(std::max(v0.pos[0], std::max(v1.pos[0], v2.pos[0])));
-    
+    //float &left = const_cast<float &>(std::min(v0.pos[0], std::min(v1.pos[0], v2.pos[0])));
+    //float &right = const_cast<float &>(std::max(v0.pos[0], std::max(v1.pos[0], v2.pos[0])));
     //left = std::floor(left);
     //right = std::ceil(right);
 
@@ -95,6 +94,16 @@ void Rasterizer::RasterizeTriangle_SL(const Vertex const *vertex, Model *model, 
     int firstHeight = v1.pos[1] - v0.pos[1] + 0.5f;
     int secondHeight = v2.pos[1] - v1.pos[1] + 0.5f;
     for (int i = 1; i < totalHeight; ++i) {
+        int y = v0.pos[1] + i;
+
+        // 视口剔除
+        if (y < 0) {
+            i = -v0.pos[1] + 1;
+            continue;
+        }
+        if (y > HEIGHT - 1) {
+            break;
+        }
         bool isSecond = (i > firstHeight) || (v1.pos[1] == v0.pos[1]);
         int crtHeight = isSecond ? secondHeight : firstHeight;
         float rate1 = i / (float)totalHeight;
@@ -103,18 +112,21 @@ void Rasterizer::RasterizeTriangle_SL(const Vertex const *vertex, Model *model, 
         int A_x = v0.pos[0] + (v2.pos[0] - v0.pos[0]) * rate1 + 0.5f;
         int B_x = isSecond ? (v1.pos[0] + (v2.pos[0] - v1.pos[0]) * rate2 + 0.5f) : (v0.pos[0] + (v1.pos[0] - v0.pos[0]) * rate2 + 0.5f);
 
-        // 这条扫描线从左（点A）画向右（点B）
+        // 这条扫描线从左（点 A）画向右（点 B）
         if (A_x > B_x) {
             std::swap(A_x, B_x);
         }
 
-        for (int j = A_x; j <= B_x; ++j) {
+        for (int x = A_x; x <= B_x; ++x) {
             // 由外层的 i 确保光栅化每一行，而不是使用丢失精度的 A.y 或 B.y
-            int x = j;
-            int y = v0.pos[1] + i;
-
-            if (x < 0 || x > WIDTH - 1 || y < 0 || y > HEIGHT - 1) {
+            
+            // 视口剔除
+            if (x < 0) {
+                x = 0;
                 continue;
+            }
+            if (x > WIDTH - 1) {
+                break;
             }
 
             // 计算重心坐标以及透视矫正插值，先将深度插值出来，直接跳过被深度测试剔除的片元
@@ -139,7 +151,7 @@ void Rasterizer::RasterizeTriangle_SL(const Vertex const *vertex, Model *model, 
             Eigen::Vector2f uv = Interpolate(baryCoor, v0.uv, v1.uv, v2.uv);
 
             // 重要的几个向量，均以着色点为出发点
-            Eigen::Vector3f normal = tmpN.head(3).normalized();
+            Eigen::Vector3f normalDir = tmpN.head(3).normalized();
             Eigen::Vector3f viewDir = (eyePos - viewPos).normalized();
             Eigen::Vector3f lightDir = (light.position - viewPos).normalized();
             Eigen::Vector3f halfDir = (viewDir + lightDir).normalized();
@@ -162,21 +174,21 @@ void Rasterizer::RasterizeTriangle_SL(const Vertex const *vertex, Model *model, 
             B *= divTBN;
             B.normalize();
             Eigen::Matrix3f TBN;
-            TBN << T[0], B[0], normal[0],
-                T[1], B[1], normal[1],
-                T[2], B[2], normal[2];
-            normal = (TBN * model->normalMap(uv)).normalized();
+            TBN << T[0], B[0], normalDir[0],
+                T[1], B[1], normalDir[1],
+                T[2], B[2], normalDir[2];
+            normalDir = (TBN * model->normalMap(uv)).normalized();
 
             // 漫反射项
             // 去贴图中采样，然后将 rgb 作为 kd 使用
             auto *bgra = model->diffuse(uv).bgra;
             Eigen::Vector3f kd = Eigen::Vector3f(bgra[2], bgra[1], bgra[0]) / 255.f;
-            float ld = std::max(0.f, normal.dot(lightDir));
+            float ld = std::max(0.f, normalDir.dot(lightDir));
 
             // 高光项
             // 去高光贴图中采样，作为计算 specular 项时的幂次方使用
             float ks = 0.3f;
-            float ls = std::pow(std::max(0.f, normal.dot(halfDir)), model->specular(uv));
+            float ls = std::pow(std::max(0.f, normalDir.dot(halfDir)), model->specular(uv));
 
             // 环境光项
             float ka = 0.02f;
