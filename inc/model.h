@@ -5,7 +5,7 @@
 
 #include <eigen3/Eigen/Eigen>
 
-#include "tgaimage.h"
+#include "inc/tgaimage.h"
 
 class Model
 {

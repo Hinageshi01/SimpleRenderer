@@ -2,8 +2,8 @@
 
 #include <graphics.h>
 
-#include "model.h"
-#include "vertexShader.h"
+#include "inc/model.h"
+#include "inc/vertexShader.h"
 
 struct Light
 {

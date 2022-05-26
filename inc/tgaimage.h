@@ -4,7 +4,7 @@
 #include <fstream>
 #include <sstream>
 
-#include "global.h"
+#include "inc/global.h"
 
 #pragma pack(push,1)
 struct TGA_Header

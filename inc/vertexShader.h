@@ -2,7 +2,7 @@
 
 #include <eigen3/Eigen/Eigen>
 
-#include "global.h"
+#include "inc/global.h"
 
 #undef near
 #undef far
@@ -33,6 +33,7 @@ public:
 	void Update(float a, float s);
 	// 变换至屏幕空间坐标系。
 	void Transform(Vertex *v) const;
+
 private:
 	// 计算 model 矩阵。
 	Eigen::Matrix4f GetModelMatrix() const;

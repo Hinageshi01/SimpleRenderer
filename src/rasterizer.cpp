@@ -85,11 +85,6 @@ void Rasterizer::RasterizeTriangle_SL(const Vertex const *vertex, Model *model, 
     v0.pos[1] = std::floor(v0.pos[1]);
     v2.pos[1] = std::ceil(v2.pos[1]);
 
-    //float &left = const_cast<float &>(std::min(v0.pos[0], std::min(v1.pos[0], v2.pos[0])));
-    //float &right = const_cast<float &>(std::max(v0.pos[0], std::max(v1.pos[0], v2.pos[0])));
-    //left = std::floor(left);
-    //right = std::ceil(right);
-
     int totalHeight = v2.pos[1] - v0.pos[1] + 0.5f;
     int firstHeight = v1.pos[1] - v0.pos[1] + 0.5f;
     int secondHeight = v2.pos[1] - v1.pos[1] + 0.5f;
@@ -104,6 +99,8 @@ void Rasterizer::RasterizeTriangle_SL(const Vertex const *vertex, Model *model, 
         if (y > HEIGHT - 1) {
             break;
         }
+
+        // 扫描线方式光栅化三角形
         bool isSecond = (i > firstHeight) || (v1.pos[1] == v0.pos[1]);
         int crtHeight = isSecond ? secondHeight : firstHeight;
         float rate1 = i / (float)totalHeight;
@@ -167,6 +164,7 @@ void Rasterizer::RasterizeTriangle_SL(const Vertex const *vertex, Model *model, 
             Eigen::Vector3f e1 = v1.viewPos - v0.viewPos;
             Eigen::Vector3f e2 = v2.viewPos - v0.viewPos;
 
+            // TBN 矩阵
             Eigen::Vector3f T(_v2 * e1[0] - _v1 * e2[0], _v2 * e1[1] - _v1 * e2[1], _v2 * e1[2] - _v1 * e2[2]);
             T *= divTBN;
             T.normalize();
