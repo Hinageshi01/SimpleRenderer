@@ -30,9 +30,6 @@
     <ClCompile Include="src\vertexShader.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="inc\particleGenerator.h">
-      <Filter>头文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\particleGenerator.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -51,6 +48,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="inc\vertexShader.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\particleGenerator.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
