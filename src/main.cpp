@@ -3,6 +3,7 @@
 
 #include "inc/rasterizer.h"
 #include "inc/vertexShader.h"
+#include "inc/particleGenerator.h"
 
 int main() {
     // 准备模型数据
@@ -22,6 +23,9 @@ int main() {
     // 准备光栅化器
     Light light = {{-1,1,1}, {10, 10, 10}, {255,255,255}};
     Rasterizer r(light, eyePos);
+
+    // 准备粒子生成器
+    ParticleGenerator parGen(1024, WIDTH / 2.f, HEIGHT / 2.f);
 
     // 准备深度缓冲
     float *z_buffer = (float *)_mm_malloc(WIDTH * HEIGHT * sizeof(float), 4096);
@@ -89,6 +93,11 @@ int main() {
             // 光栅化器与片元着色器
             r.RasterizeTriangle_SL(vertexes, model, z_buffer);
         }
+
+        // 绘制粒子
+        parGen.UpDate(0.05f, 48);
+        parGen.Draw();
+
         ++sumFrame;
         FlushBatchDraw();
     }

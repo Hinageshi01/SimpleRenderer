@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="inc\particleGenerator.h" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\model.cpp" />
     <ClCompile Include="src\particleGenerator.cpp" />
@@ -30,6 +29,7 @@
   <ItemGroup>
     <ClInclude Include="inc\global.h" />
     <ClInclude Include="inc\model.h" />
+    <ClInclude Include="inc\particleGenerator.h" />
     <ClInclude Include="inc\rasterizer.h" />
     <ClInclude Include="inc\tgaimage.h" />
     <ClInclude Include="inc\vertexShader.h" />
